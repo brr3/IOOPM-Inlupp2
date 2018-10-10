@@ -22,18 +22,6 @@ typedef bool(*check_func)(char *);
 
 typedef answer_t(*convert_func)(char *);
 
-struct item
-{
-	char *item_name;
-	char *item_description;
-	int   item_price;
-	char *item_shelf;
-	int   item_amount;
-};
-
-typedef struct item item_t;
-
-
 bool not_empty(char *str);
 bool is_number(char *str);
 bool is_float(char *str);

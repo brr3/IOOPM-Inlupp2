@@ -32,22 +32,6 @@ answer_t make_float(char *str)
 	  return (answer_t) { .float_value = atof(str) };
 }
 
-bool is_shelf(char *str)
-{
-	if(strlen(str) >= 2 && ((str[0] >= 65 && str[0] <= 90) || (str[0] >= 97 && str[0] <= 122)))
-	{
-		for(int i = 1; i < strlen(str); ++i)
-		{
-			if(!isdigit(str[i]))
-			{
-				return false;
-			}
-		}
-		return true;
-	}
-	return false;
-}
-
 bool is_amount(char *str)
 {
 	for(int i = 0; i < strlen(str); ++i)
@@ -160,21 +144,4 @@ int ask_question_int(char *question)
 double ask_question_float(char *question)
 {
 	return ask_question(question, is_float, make_float).float_value;
-}
-
-char *ask_question_shelf(char *question)
-{
-	return ask_question(question, is_shelf, (convert_func) strdup).string_value;
-}
-
-char ask_question_menu(char *question)
-{
-	answer_t answer = ask_question(question, is_menu_selection, (convert_func) make_char);
-	return toupper(answer.char_value);
-}
-
-int ask_question_amount(char *question)
-{
-	answer_t answer = ask_question(question, is_amount, (convert_func) atoi);
-	return answer.int_value;
 }
