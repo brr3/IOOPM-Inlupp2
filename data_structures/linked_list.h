@@ -55,7 +55,7 @@ elem_t ioopm_linked_list_get(ioopm_list_t *list, int index);
 /// @param list    | the linked list
 /// @param element | the element sought
 /// @return true if element is in the list, else false
-bool ioopm_linked_list_contains(ioopm_list_t *list, elem_t element, cmp_fun_t compare_fun);
+bool ioopm_linked_list_contains(ioopm_list_t *list, elem_t element, __compar_fn_t compare_fun);
 
 /// @brief Lookup the number of elements in the linked list in O(1) time
 /// @param list | the linked list

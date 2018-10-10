@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../linked_list/linked_list.h"
+#include "linked_list.h"
 #include "common.h"
 #include <stdbool.h>
 #include <stdlib.h>

@@ -62,7 +62,7 @@ elem_t ioopm_iterator_next(ioopm_list_iterator_t *iter)
     }
   else
     {
-      return (elem_t) {.void_ptr = NULL};
+      return (elem_t) {.v = NULL};
     }
 }
 
@@ -83,7 +83,7 @@ elem_t ioopm_iterator_remove(ioopm_list_iterator_t *iter)
     }
   else
     {
-      return (elem_t) {.void_ptr = NULL};
+      return (elem_t) {.v = NULL};
     }
 }
 
@@ -109,7 +109,7 @@ elem_t ioopm_iterator_current(ioopm_list_iterator_t *iter)
     }
   else
     {
-      return (elem_t) {.void_ptr = NULL};
+      return (elem_t) {.v = NULL};
     }
 }
 
@@ -229,16 +229,16 @@ elem_t ioopm_linked_list_get(ioopm_list_t *list, int index)
     }
   else
     {
-      return (elem_t) {.void_ptr = NULL};
+      return (elem_t) {.v = NULL};
     }
 }
 
 
-bool ioopm_linked_list_contains(ioopm_list_t *list, elem_t value, cmp_fun_t compare_fun)
+bool ioopm_linked_list_contains(ioopm_list_t *list, elem_t value, __compar_fn_t compare_fun)
 {
   for (node_t *cursor = list->first->next; cursor != NULL; cursor = cursor->next)
     {
-      if (compare_fun(cursor->data, value) == 0) return true;
+      if (compare_fun(&cursor->data, &value) == 0) return true;
     }
   return false;
 }

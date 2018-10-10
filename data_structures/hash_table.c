@@ -1,9 +1,8 @@
 #include "hash_table.h"
 #include "common.h"
-#include "../linked_list/linked_list.h"
+#include "linked_list.h"
 #include <stdio.h>
 #include <stdlib.h>
-#include "dbg.h"
 #include <assert.h>
 #include <string.h>
 
