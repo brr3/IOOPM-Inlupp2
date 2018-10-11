@@ -4,13 +4,19 @@
 #include "../data_structures/hash_table.h"
 
 typedef struct item item_t;
+typedef struct shelf shelf_t;
 
 struct item
 {
   char *name;
   char *desc;
   int price;
-  ioopm_hash_table_t *shelves;
+  ioopm_list_t *shelves;
+};
+
+struct shelf
+{
+  char *shelf_name;
   int amount;
 };
 
