@@ -28,7 +28,12 @@ item_t make_merch(char *name, char *desc, int price, char *shelf_name)
   set_item_name(&item, name);
   set_item_desc(&item, desc);
   set_item_price(&item, price);
-  initiate_item_shelves(&item, shelf_name);
+  //initiate_item_shelves(&item, shelf_name);
+  ioopm_list_t *list = ioopm_linked_list_create(); 
+  shelf_t shelf = {.shelf_name = shelf_name, .amount = 0};
+  elem_t element = {.v = &shelf};
+  ioopm_linked_list_prepend(list, element);
+  item.shelves = list;
   return item;
 }
 
@@ -84,30 +89,32 @@ void print_item(item_t item)
   char *desc = get_item_desc(item);
   ioopm_list_t *shelves = get_item_shelves(item);
   size_t shelves_count = get_item_shelves_count(item);
+  
+  shelf_t shelf = *((shelf_t*) ioopm_linked_list_get(shelves, 0).v);
+  int item_amount = get_item_total_amount(item);
 
-  shelf_t *shelf = ioopm_linked_list_get(shelves, 0).v;
   if (shelves_count == 1)
     {
-      printf("--------------------- \n");
-      printf("Name: %s\nDesc: %s\nPrice: %d.%d kr\nShelves: %s\nAmount: %d\n", name, desc, kr, ore, shelf->shelf_name, shelf->amount);
+      printf("---------------------\n");
+      printf("Name: %s\nDesc: %s\nPrice: %d.%d kr\nShelves: %s\nAmount: %d\n", name, desc, kr, ore, shelf.shelf_name, item_amount);
     }
   else
     {
-      printf("--------------------- \n");
+      printf("---------------------\n");
       printf("Name: %s\nDesc: %s\nPrice: %d.%d kr\nShelves: ", name, desc, kr, ore);
       for (int i = 0; i < (int) shelves_count; i++)
         {
-          shelf_t *shelf = ioopm_linked_list_get(shelves, i).v;
+          shelf_t shelf = *((shelf_t*) ioopm_linked_list_get(shelves, i).v); 
           if (i < (int) shelves_count - 1)
             {
-              printf("%s, ", shelf->shelf_name); 
+              printf("%s, ", shelf.shelf_name); 
             }
           else
             {
-              printf("%s\n", shelf->shelf_name);
+              printf("%s\n", shelf.shelf_name);
             }
         }
-      printf("Amount: %d\n", get_item_total_amount(item));
+      printf("Amount: %d\n", item_amount);
     }
 }
 
