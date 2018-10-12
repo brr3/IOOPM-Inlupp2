@@ -1,33 +1,7 @@
 #include <stdio.h>
 #include <stdbool.h>
 #include "logic.h"
-#include "../utils/utils.h"
-
-
-char *get_item_name(item_t item)
-{
-  return item.name;
-}
-
-char *get_item_desc(item_t item)
-{
-  return item.desc;
-}
-
-int get_item_price(item_t item)
-{
-  return item.price;
-}
-
-ioopm_list_t *get_item_shelves(item_t item)
-{
-  return ioopm_hash_table_keys(item.shelves);
-}
-
-int get_item_amount(item_t item)
-{
-  return item.amount;
-}
+#include "elem.h"
 
 
 int hash_string(elem_t key)
@@ -42,21 +16,20 @@ int hash_string(elem_t key)
   return result;
 }
 
-
 bool cmp_int(elem_t a, elem_t b)
 {
   return a.i - b.i == 0;
 }
 
 
-item_t make_merch(char *name, char *desc, int price, char *shelf)
+item_t make_merch(char *name, char *desc, int price, char *shelf_name) 
 {
-  ioopm_hash_table_t *ht = ioopm_hash_table_create_custom(hash_string, cmp_int, 17, 0.9);
-  elem_t elem_shelf = {.s = shelf};
-  elem_t elem_amount = {.i = 0};
-  ioopm_hash_table_insert(ht, elem_shelf, elem_amount);
-  item_t t = { .name = name, .desc = desc, .price = price, .shelves = ht, .amount = 0};
-  return t;
+  item_t item = {};
+  set_item_name(&item, name);
+  set_item_desc(&item, desc);
+  set_item_price(&item, price);
+  initiate_item_shelves(&item, shelf_name);
+  return item;
 }
 
 
@@ -77,13 +50,8 @@ bool is_shelf(char *shelf)
     ++str;
     }
   --str;
-  if (!isdigit(*str))
-    {
-      return false;
-    }
-  return true;
+  return isdigit(*str);
 }
-
 
 bool is_menu_key(char *key)
 {
@@ -108,41 +76,43 @@ bool is_menu_key(char *key)
 }
 
 
-void print_item(item_t i) // rätt fil??
+void print_item(item_t item)
 {
-  int kr  = get_item_price(i) / 100;
-  int ore = get_item_price(i) % 100;
-  char *name = get_item_name(i);
-  char *desc = get_item_desc(i);
-  ioopm_list_t *shelves = get_item_shelves(i);
-  size_t list_size = ioopm_linked_list_size(shelves);
-  int amount = get_item_amount(i);
+  int kr  = get_item_price(item) / 100;
+  int ore = get_item_price(item) % 100;
+  char *name = get_item_name(item);
+  char *desc = get_item_desc(item);
+  ioopm_list_t *shelves = get_item_shelves(item);
+  size_t shelves_count = get_item_shelves_count(item);
 
-  if (list_size == 1)
+  shelf_t *shelf = ioopm_linked_list_get(shelves, 0).v;
+  if (shelves_count == 1)
     {
       printf("--------------------- \n");
-      printf("Name: %s\nDesc: %s\nPrice: %d.%d kr\nShelves: %s\nAmount: %d\n", name, desc, kr, ore, ioopm_linked_list_get(shelves, 0).s, amount);
+      printf("Name: %s\nDesc: %s\nPrice: %d.%d kr\nShelves: %s\nAmount: %d\n", name, desc, kr, ore, shelf->shelf_name, shelf->amount);
     }
   else
     {
       printf("--------------------- \n");
       printf("Name: %s\nDesc: %s\nPrice: %d.%d kr\nShelves: ", name, desc, kr, ore);
-      for (int i = 0; i < (int) list_size; i++)
+      for (int i = 0; i < (int) shelves_count; i++)
         {
-          if (i < (int) list_size - 1)
+          shelf_t *shelf = ioopm_linked_list_get(shelves, i).v;
+          if (i < (int) shelves_count - 1)
             {
-              printf("%s, ", ioopm_linked_list_get(shelves, i).s); 
+              printf("%s, ", shelf->shelf_name); 
             }
           else
             {
-              printf("%s\n", ioopm_linked_list_get(shelves, i).s);
+              printf("%s\n", shelf->shelf_name);
             }
         }
+      printf("Amount: %d\n", get_item_total_amount(item));
     }
 }
 
 
-void list_db(item_t *items, int no_items) // rätt fil??
+void list_db(item_t *items, int no_items) 
 {
   char *name = items->name;
 
@@ -154,7 +124,7 @@ void list_db(item_t *items, int no_items) // rätt fil??
 }
 
 
-item_t input_merch(void) // rätt fil??
+item_t input_merch(void) 
 {
   char *name = ask_question_string("Enter a name: ");
   char *desc = ask_question_string("Enter a description: ");
@@ -225,5 +195,3 @@ item_t remove_item_from_db(item_t *items, int no_items)
         }
     }  
 }
-
-

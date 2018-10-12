@@ -1,7 +1,11 @@
+#ifndef LOGIC_H
+#define LOGIC_H
 #include <stdio.h>
 #include <stdbool.h>
 #include "../data_structures/linked_list.h"
 #include "../data_structures/hash_table.h"
+#include "../utils/utils.h"
+
 
 typedef struct item item_t;
 typedef struct shelf shelf_t;
@@ -19,17 +23,6 @@ struct shelf
   char *shelf_name;
   int amount;
 };
-
-
-char *get_item_name(item_t item);
-
-char *get_item_desc(item_t item);
-
-int get_item_price(item_t item);
-
-ioopm_list_t *get_item_shelves(item_t item);
-
-int get_item_amount(item_t item);
 
 
 item_t make_merch(char *name, char *desc, int price, char *shelf);
@@ -51,3 +44,5 @@ void list_db(item_t *items, int no_items);
 item_t input_merch(void);
 
 void print_item(item_t i);
+
+#endif
