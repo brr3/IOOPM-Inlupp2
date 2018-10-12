@@ -4,7 +4,7 @@
 #include "elem.h"
 
 
-int hash_string(elem_t key)
+static int hash_string(elem_t key)
 {
   char *str = key.s;
   int result = 0;
@@ -16,7 +16,7 @@ int hash_string(elem_t key)
   return result;
 }
 
-bool cmp_int(elem_t a, elem_t b)
+static bool cmp_int(elem_t a, elem_t b)
 {
   return a.i - b.i == 0;
 }
@@ -24,16 +24,17 @@ bool cmp_int(elem_t a, elem_t b)
 
 item_t make_merch(char *name, char *desc, int price, char *shelf_name) 
 {
-  item_t item = {};
+  item_t item;
   set_item_name(&item, name);
   set_item_desc(&item, desc);
   set_item_price(&item, price);
-  //initiate_item_shelves(&item, shelf_name);
-  ioopm_list_t *list = ioopm_linked_list_create(); 
+  // Initiate item shelves 
   shelf_t shelf = {.shelf_name = shelf_name, .amount = 0};
-  elem_t element = {.v = &shelf};
-  ioopm_linked_list_prepend(list, element);
-  item.shelves = list;
+  shelf_t temp = shelf;
+  elem_t element = {.v = &temp};
+  ioopm_list_t *shelves = ioopm_linked_list_create();
+  ioopm_linked_list_prepend(shelves, element);
+  item.shelves = shelves;
   return item;
 }
 

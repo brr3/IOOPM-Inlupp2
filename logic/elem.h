@@ -22,6 +22,4 @@ void set_item_desc(item_t *item, char *desc);
 
 void set_item_price(item_t *item, int price);
 
-void initiate_item_shelves(item_t *item, char *shelf_name);
-
 #endif

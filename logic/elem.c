@@ -54,13 +54,3 @@ void set_item_price(item_t *item, int price)
   item->price = price;
 }
 
- // FUNKAR EJ 
-void initiate_item_shelves(item_t *item, char *shelf_name)
-{
-  ioopm_list_t *list = ioopm_linked_list_create(); 
-  shelf_t shelf = {.shelf_name = shelf_name, .amount = 0};
-  elem_t element = {.v = &shelf};
-  ioopm_linked_list_prepend(list, element);
-  item->shelves = list;
-} 
-
