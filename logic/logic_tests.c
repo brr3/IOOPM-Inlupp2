@@ -1,4 +1,5 @@
 #include <stdbool.h>
+#include <assert.h>
 #include "CUnit/Basic.h"
 #include "logic.h"
 #include "elem.h"
@@ -26,27 +27,30 @@ static int hash_string(elem_t key)
   return result;
 }
 
-static bool cmp_int(elem_t a, elem_t b)
+static bool cmp_string(elem_t a, elem_t b)
 {
-  return a.i - b.i == 0;
+  return strcmp(a.s, b.s) == 0;
 }
 
 static void print()
 {
-  ioopm_hash_table_t *ht = ioopm_hash_table_create_custom(hash_string, cmp_int, 17, 0.9);
+  ioopm_hash_table_t *ht = ioopm_hash_table_create_custom(hash_string, cmp_string, 17, 0.9);
   add_merch_to_db(ht);
-  puts("add merch done");
   //add_merch_to_db(ht);
-  elem_t found_element;
-  elem_t elem_name = {.s = "Äpple"};
-  puts("before lookup");
-  ioopm_hash_table_lookup(ht, elem_name, &found_element);
-  puts("after lookup");
-  item_t item1 = *((item_t*) found_element.v);
-  //item_t item2 = make_merch("Päron", "En annan frukt", 50);
-  
-  print_item(item1);
-  //print_item(item2);
+  elem_t found_element1 = {.v = NULL};
+  //elem_t found_element2 = {.v = NULL};
+  elem_t elem_name1 = {.s = "Äpple"};
+  //elem_t elem_name2 = {.s = "Päron"};
+  assert(ioopm_hash_table_lookup(ht, elem_name1, &found_element1));
+  //assert(ioopm_hash_table_lookup(ht, elem_name2, &found_element2));
+  item_t item1 = *((item_t*) found_element1.v);
+  //item_t item2 = *((item_t*) found_element2.v);
+  printf("item1 name = %s\n", item1.name);
+  printf("item1 desc = %s\n", item1.desc);
+  printf("item1 price = %d\n", item1.price);
+  //printf("item2 name = %s\n", item2.name);
+  //printf("item2 desc = %s\n", item2.desc);
+  //printf("item2 price = %d\n", item2.price);
 }
 
 

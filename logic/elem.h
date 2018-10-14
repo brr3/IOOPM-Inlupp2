@@ -15,7 +15,6 @@ int get_item_shelves_count(item_t item);
 
 int get_item_total_amount(item_t item);
 
-
 void set_item_name(item_t *item, char *name);
 
 void set_item_desc(item_t *item, char *desc);

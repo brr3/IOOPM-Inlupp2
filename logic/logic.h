@@ -24,25 +24,12 @@ struct shelf
   int amount;
 };
 
-
-item_t make_merch(char *name, char *desc, int price);
-
-bool is_shelf(char *shelf);
-
-bool is_menu_key(char *key);
-
-
 item_t edit_db(item_t *items, int no_items);
 
 void add_merch_to_db(ioopm_hash_table_t *items);
 
 item_t remove_item_from_db(item_t *items, int no_items);
 
-
 void list_db(item_t *items, int no_items);
-
-item_t input_merch(void);
-
-void print_item(item_t i);
 
 #endif
