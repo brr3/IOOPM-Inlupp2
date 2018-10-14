@@ -21,23 +21,16 @@ static bool cmp_int(elem_t a, elem_t b)
   return a.i - b.i == 0;
 }
 
-
-item_t make_merch(char *name, char *desc, int price, char *shelf_name) 
+item_t make_merch(char *name, char *desc, int price) 
 {
   item_t item;
   set_item_name(&item, name);
   set_item_desc(&item, desc);
   set_item_price(&item, price);
-  // Initiate item shelves 
-  shelf_t shelf = {.shelf_name = shelf_name, .amount = 0};
-  shelf_t temp = shelf;
-  elem_t element = {.v = &temp};
   ioopm_list_t *shelves = ioopm_linked_list_create();
-  ioopm_linked_list_prepend(shelves, element);
   item.shelves = shelves;
   return item;
 }
-
 
 bool is_shelf(char *shelf)
 {
@@ -81,7 +74,6 @@ bool is_menu_key(char *key)
     }
 }
 
-
 void print_item(item_t item)
 {
   int kr  = get_item_price(item) / 100;
@@ -90,10 +82,17 @@ void print_item(item_t item)
   char *desc = get_item_desc(item);
   ioopm_list_t *shelves = get_item_shelves(item);
   size_t shelves_count = get_item_shelves_count(item);
+
+  if (shelves_count == 0) // Print newly created merchandise
+    {
+      printf("---------------------\n");
+      printf("Name: %s\nDesc: %s\nPrice: %d.%d\n", name, desc, kr, ore);
+      return;
+    }
   
   shelf_t shelf = *((shelf_t*) ioopm_linked_list_get(shelves, 0).v);
   int item_amount = get_item_total_amount(item);
-
+  
   if (shelves_count == 1)
     {
       printf("---------------------\n");
@@ -131,17 +130,14 @@ void list_db(item_t *items, int no_items)
   }
 }
 
-
 item_t input_merch(void) 
 {
   char *name = ask_question_string("Enter a name: ");
   char *desc = ask_question_string("Enter a description: ");
   int price = ask_question_int("Enter a price: ");
-  char *shelf = ask_question_shelf("Enter a shelf: ");
   
-  return make_merch(name, desc, price, shelf);
+  return make_merch(name, desc, price);
 }
-
 
 item_t edit_db(item_t *items, int no_items)
 {
@@ -167,15 +163,36 @@ item_t edit_db(item_t *items, int no_items)
     }
 }
 
+static char *to_upper(char* str)
+{
+  while (*str)
+    {
+      *str = toupper(*str);
+      str++;
+    }
+}
+
+static bool merch_exists(ioopm_hash_table_t *items, char *name)
+{
+  elem_t found_element;
+  elem_t elem_name = {.s = name};
+  return ioopm_hash_table_lookup(items, elem_name, &found_element);
+}
 
 void add_merch_to_db(ioopm_hash_table_t *items)
 {
   item_t item = input_merch();
+  puts("before merch_exists");
+  while (merch_exists(items, item.name))
+    {
+      printf("OBS! The name of merchandise you entered already exists in the database (NOT case sensitive).");
+      item.name = ask_question_string("Enter a name: ");
+    }
+  puts("after merch_exists");
   elem_t elem_name = {.s = item.name};
   elem_t elem_item = {.v = &item};
   ioopm_hash_table_insert(items, elem_name, elem_item);
 }
-
 
 item_t remove_item_from_db(item_t *items, int no_items)
 { 

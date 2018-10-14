@@ -25,7 +25,7 @@ struct shelf
 };
 
 
-item_t make_merch(char *name, char *desc, int price, char *shelf);
+item_t make_merch(char *name, char *desc, int price);
 
 bool is_shelf(char *shelf);
 
