@@ -18,7 +18,7 @@ dependencies: data_structures/linked_list.c data_structures/hash_table.c utils/u
 	$(COMPILER) $(OPTIONS) -c data_structures/linked_list.c data_structures/hash_table.c utils/utils.c $(LINKOPTIONS)
 
 clean:
-	rm *.o
+	rm *.o tests
 
 gitadd:
 	git add *.c *.h *.md Makefile
