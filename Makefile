@@ -21,4 +21,4 @@ clean:
 	rm *.o tests
 
 gitadd:
-	git add *.c *.h *.md Makefile
+	git add user_interface/*.c user_interface/*.h *.c *.h *.md Makefile 
