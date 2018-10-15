@@ -38,7 +38,7 @@ void add_merch(ioopm_hash_table_t *items) // TODO: Add hash table key in ALL cap
   ioopm_hash_table_insert(items, elem_name, elem_item);
 }
 
-void list_merch(ioopm_hash_table_t *items) // TODO
+void list_merch(ioopm_hash_table_t *items)
 {
   int merch_count = ioopm_hash_table_size(items);
   if (merch_count == 0)
