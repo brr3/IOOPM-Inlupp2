@@ -24,6 +24,10 @@ struct shelf
   int amount;
 };
 
+int hash_string(elem_t key);
+
+bool cmp_string(elem_t a, elem_t b);
+
 bool is_shelf(char *shelf);
 
 bool is_menu_key(char *key);
@@ -31,6 +35,10 @@ bool is_menu_key(char *key);
 bool merch_exists(ioopm_hash_table_t *items, char *name);
 
 item_t *make_merch(char *name, char *desc, int price);
+
+char *to_upper(char *str);
+
+void print_item_apply_func(elem_t key_ignored, elem_t element, void *x_ignored);
 
 void print_item(item_t item);
 

@@ -2,7 +2,6 @@
 #define ELEM_H
 #include "logic.h"
 
-
 char *get_item_name(item_t item);
 
 char *get_item_desc(item_t item);
