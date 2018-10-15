@@ -20,11 +20,5 @@ dependencies: data_structures/linked_list.c data_structures/hash_table.c utils/u
 clean:
 	rm *.o
 
-gitadd_all: gitadd_logic gitadd_ui
-	git add Makefile
-
-gitadd_logic:
-	git add logic/*.c logic/*.h
-
-gitadd_ui:
-	git add user_interface/*.c user_interface/*.h
+gitadd:
+	git add *.c *.h *.md Makefile

@@ -31,8 +31,6 @@ int read_string(char *buf, int buf_siz);
 int ask_question_int(char *question);
 int ask_question_amount(char *question);
 char *ask_question_string(char *question);
-char *ask_question_shelf(char *question);
-char ask_question_menu(char *question);
 double ask_question_float(char *question);
 
 answer_t ask_question(char *question, check_func check, convert_func convert);

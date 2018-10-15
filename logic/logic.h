@@ -24,12 +24,14 @@ struct shelf
   int amount;
 };
 
-item_t edit_db(item_t *items, int no_items);
+bool is_shelf(char *shelf);
 
-void add_merch_to_db(ioopm_hash_table_t *items);
+bool is_menu_key(char *key);
 
-item_t remove_item_from_db(item_t *items, int no_items);
+bool merch_exists(ioopm_hash_table_t *items, char *name);
 
-void list_db(item_t *items, int no_items);
+item_t *make_merch(char *name, char *desc, int price);
+
+void print_item(item_t item);
 
 #endif
