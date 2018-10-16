@@ -95,7 +95,7 @@ item_t *make_merch(char *name, char *desc, int price)
   return item;
 }
 
-char *to_upper(char* str)
+char *to_upper(char* str) // Not working
 {
   while (*str)
     {
@@ -105,52 +105,77 @@ char *to_upper(char* str)
   return str;
 }
 
-void print_item_apply_func(elem_t key_ignored, elem_t element, void *x_ignored)
+static int cmp_string_ptr(const void *p1, const void *p2)
 {
-  item_t item = *(item_t*) element.v;
-  print_item(item);
+  return strcmp(*(char *const *) p1, *(char *const *) p2);
 }
 
-void print_item(item_t item)
+void sort_keys(char *keys[], size_t no_keys)
+{  
+  qsort(keys, no_keys, sizeof(char *), cmp_string_ptr);
+}
+
+void ht_names_to_sorted_array(ioopm_hash_table_t *items, char *arr_names[])
+{
+  int merch_count = ioopm_hash_table_size(items);
+  ioopm_list_t *merch_names = ioopm_hash_table_keys(items);
+  for (int i = 0; i < merch_count; i++)
+    {
+      arr_names[i] = ioopm_linked_list_remove(merch_names, i).s; // Faster than linked_list_get
+    }
+  sort_keys(arr_names, merch_count);
+  ioopm_linked_list_destroy(merch_names);
+}
+
+void print_item(item_t item, int id, bool print_stock)
 {
   int kr  = get_item_price(item) / 100;
   int ore = get_item_price(item) % 100;
   char *name = get_item_name(item);
   char *desc = get_item_desc(item);
-  ioopm_list_t *shelves = get_item_shelves(item);
-  size_t shelves_count = get_item_shelves_count(item);
 
-  if (shelves_count == 0) // Print newly created merchandise
+  if (print_stock) // Show stock
     {
-      printf("---------------------\n");
-      printf("Name: %s\nDesc: %s\nPrice: %d.%d\n", name, desc, kr, ore);
-      return;
-    }
-  
-  shelf_t shelf = *((shelf_t*) ioopm_linked_list_get(shelves, 0).v);
-  int item_amount = get_item_total_amount(item);
-  
-  if (shelves_count == 1)
-    {
-      printf("---------------------\n");
-      printf("Name: %s\nDesc: %s\nPrice: %d.%d kr\nShelves: %s\nAmount: %d\n", name, desc, kr, ore, shelf.shelf_name, item_amount);
+      size_t shelves_count = get_item_shelves_count(item);      
+      if (shelves_count == 0)
+        {
+          printf("--------[ %d ]--------\n", id);
+          printf("Name: %s\nDesc: %s\nPrice: %d.%d\nShelves: None\n", name, desc, kr, ore);
+          return;
+        }
+      ioopm_list_t *shelves = get_item_shelves(item);
+      shelf_t shelf = *((shelf_t*) ioopm_linked_list_get(shelves, 0).v);
+      int item_amount = get_item_total_amount(item);
+      
+      if (shelves_count == 1)
+        {
+          printf("--------[ %d ]--------\n", id);
+          printf("Name: %s\nDesc: %s\nPrice: %d.%d kr\nShelves: %s\nAmount: %d\n", name, desc, kr, ore, shelf.shelf_name, item_amount);
+        }
+      
+      if (shelves_count > 1)
+        {
+          printf("--------[ %d ]--------\n", id);
+          printf("Name: %s\nDesc: %s\nPrice: %d.%d kr\nShelves: ", name, desc, kr, ore);
+          for (int i = 0; i < (int) shelves_count; i++)
+            {
+              shelf_t shelf = *((shelf_t*) ioopm_linked_list_get(shelves, i).v); 
+              if (i < (int) shelves_count - 1)
+                {
+                  printf("%s, ", shelf.shelf_name); 
+                }
+              else
+                {
+                  printf("%s\n", shelf.shelf_name);
+                }
+            }
+          printf("Amount: %d\n", item_amount);
+        }
     }
   else
     {
-      printf("---------------------\n");
-      printf("Name: %s\nDesc: %s\nPrice: %d.%d kr\nShelves: ", name, desc, kr, ore);
-      for (int i = 0; i < (int) shelves_count; i++)
-        {
-          shelf_t shelf = *((shelf_t*) ioopm_linked_list_get(shelves, i).v); 
-          if (i < (int) shelves_count - 1)
-            {
-              printf("%s, ", shelf.shelf_name); 
-            }
-          else
-            {
-              printf("%s\n", shelf.shelf_name);
-            }
-        }
-      printf("Amount: %d\n", item_amount);
+      printf("--------[ %d ]--------\n", id);
+      printf("Name: %s\nDesc: %s\nPrice: %d.%d\n", name, desc, kr, ore); // List merchandise
+      return;
     }
 }
