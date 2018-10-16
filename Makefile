@@ -17,6 +17,9 @@ ui.o: user_interface/ui.c user_interface/ui.h
 dependencies: data_structures/linked_list.c data_structures/hash_table.c utils/utils.c 
 	$(COMPILER) $(OPTIONS) -c data_structures/linked_list.c data_structures/hash_table.c utils/utils.c $(LINKOPTIONS)
 
+memtest: tests
+	valgrind --leak-check=full ./tests
+
 clean:
 	rm *.o tests
 

@@ -16,6 +16,20 @@ static char ask_question_menu(char *question)
   return toupper(*ask_question(question, is_menu_key, (convert_func) strdup).string_value);
 }
 
+static int ask_question_remove(char *question, int merch_count)
+{
+  int id = ask_question_int(question);
+  if (id >= 1 && id <= merch_count)
+    {
+      return id;
+    }
+  else
+    {
+      puts("OBS! A merchandise with that ID does not exist.");
+      return ask_question_remove(question, merch_count);
+    }
+}
+
 static item_t *input_merch(void) 
 {
   char *name = ask_question_string("Enter a name: ");
@@ -25,7 +39,7 @@ static item_t *input_merch(void)
   return make_merch(name, desc, price);
 }
 
-void add_merch(ioopm_hash_table_t *items) // TODO: Add hash table key in ALL caps to prevent multiple occurences of a merch
+void add_merch(ioopm_hash_table_t *items) // TODO: Add hash table key in ALL caps to prevent multiple occurences of a merchandise
 {
   item_t *item = input_merch();
   while (merch_exists(items, item->name))
@@ -46,34 +60,54 @@ void list_merch(ioopm_hash_table_t *items)
       puts("No merchandise has been added to the warehouse yet!");
       return;
     }
-  ioopm_hash_table_apply_to_all(items, print_item_apply_func, NULL);
+  char *arr_names[merch_count];
+  ht_names_to_sorted_array(items, arr_names);
+  
+  elem_t found_element;
+  int continues = 1;
+  for (int i = 0; i < merch_count; i++)
+    {
+      elem_t elem_name  = {.s = arr_names[i]};
+      ioopm_hash_table_lookup(items, elem_name, &found_element);
+      item_t item = *(item_t*) found_element.v;
+      
+      print_item(item, i + 1, false);
+      
+      while (i == continues * 20 - 1 && merch_count > continues * 20)
+        {
+          char key = toupper(*ask_question_string("Continue listing? (y/n)")); // TODO: Fix memory leak
+          if (key == 'Y') // If first letter is Y
+            {
+              continues++;
+              break;
+            }
+          if (key == 'N') // If first letter is N
+            {
+              i = merch_count;
+              break;
+            }
+        }
+    }
 }
 
-/*item_t remove_merch(ioopm_hash_table_t *items, char *merch) // TODO
+void remove_merch(ioopm_hash_table_t *items) // TODO: When storage location hash table is done, remove entry from there as well
 { 
-  list_db(items, no_items);
+  list_merch(items);
+  int merch_count = ioopm_hash_table_size(items);
+  char *arr_names[merch_count];
+  ht_names_to_sorted_array(items, arr_names);
+  
+  int id = ask_question_remove("Enter the number id of the merchandise you would like to remove:", merch_count); 
+  elem_t elem_key = {.s = arr_names[id - 1]};
+  elem_t found_element;
 
-  while (true)
-    {
-      int editpos = ask_question_int("Enter the number of the item you want to remove: ");
-
-      if (editpos < 1 || editpos > no_items)
-        {
-          printf("OBS! Enter a number between 1 and %d.\n", no_items); 
-        } else
-        {
-          printf("--------------------- \n");
-          printf("The following item has now been removed: \n");
-          print_item(items[editpos - 1]);         
-
-          for (int i = editpos - 1; i <= no_items - 1; i++)
-            {
-              items[i] = items[i+1];
-            }
-          return *items;
-        }
-    }  
-} */
+  puts("The following merchandise has been removed:");
+  ioopm_hash_table_lookup(items, elem_key, &found_element);
+  item_t item = *(item_t*) found_element.v;
+  print_item(item, id, true);
+  
+  ioopm_hash_table_remove_entry(items, elem_key);
+}
 
 /*item_t edit_db(item_t *items, int no_items) // TODO
 {
@@ -99,12 +133,20 @@ void list_merch(ioopm_hash_table_t *items)
     }
 }*/
 
+static void free_hash_table_values_keys(elem_t key_ignored, elem_t value, void *x_ignored)
+{
+  free((*(item_t*) value.v).name);
+  free((*(item_t*) value.v).desc);
+  ioopm_linked_list_destroy((*(item_t*) value.v).shelves);
+  free(value.v);
+}
+
 void event_loop()
 {
   ioopm_hash_table_t *items = ioopm_hash_table_create_custom(hash_string, cmp_string, 17, 0.9);
   while (true)
     {
-      printf("--------------------- \n");
+      printf("---------------------\n");
       char key = ask_question_menu("[A]dd merchandise\n\
 [L]ist merchandise\n\
 [R]emove merchandise\n\
@@ -117,8 +159,8 @@ Ad[d] item to shopping cart\n\
 Rem[o]ve item from shopping cart\n\
 Calc[u]late cost\n\
 Chec[k]out\n\
-[Q]uit\n");
-      printf("--------------------- \n");
+[Q]uit\n"); // TODO: Fix memory leak
+      printf("---------------------\n");
       if (key == 'A')
         {
           add_merch(items);
@@ -129,7 +171,7 @@ Chec[k]out\n\
         }
       if (key == 'R')
         {
-          //remove_merch(items);
+          remove_merch(items);
         }
       if (key == 'E')
         {
@@ -169,6 +211,8 @@ Chec[k]out\n\
         }
       if (key == 'Q')
         {
+          ioopm_hash_table_apply_to_all(items, free_hash_table_values_keys, NULL);          
+          ioopm_hash_table_destroy(items);
           puts("PROGRAM QUIT");
           break;
         }

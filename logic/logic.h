@@ -38,8 +38,10 @@ item_t *make_merch(char *name, char *desc, int price);
 
 char *to_upper(char *str);
 
-void print_item_apply_func(elem_t key_ignored, elem_t element, void *x_ignored);
+void sort_keys(char *keys[], size_t no_keys);
 
-void print_item(item_t item);
+void ht_names_to_sorted_array(ioopm_hash_table_t *items, char *arr[]);
+
+void print_item(item_t item, int id, bool print_stock);
 
 #endif
