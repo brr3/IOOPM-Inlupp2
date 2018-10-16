@@ -7,6 +7,13 @@
 #include "../logic/logic.h"
 #include "../logic/elem.h"	
 
+static void free_hash_table_keys_values(elem_t key_ignored, elem_t value, void *x_ignored)
+{
+  free((*(item_t*) value.v).name);
+  free((*(item_t*) value.v).desc);
+  ioopm_linked_list_destroy((*(item_t*) value.v).shelves);
+  free(value.v);
+}
 
 static char *ask_question_shelf(char *question)
 {
@@ -95,23 +102,29 @@ void list_merch(ioopm_hash_table_t *items)
 void remove_merch(ioopm_hash_table_t *items) // TODO: When storage location hash table is done, remove entry from there as well
 { 
   list_merch(items);
+  
   int merch_count = ioopm_hash_table_size(items);
   char *arr_names[merch_count];
   ht_names_to_sorted_array(items, arr_names);
   
-  int id = ask_question_check_id("Enter the number id of the merchandise you would like to remove:", merch_count); 
+  int id = ask_question_check_id("Enter the number id of the merchandise you would like to remove:", merch_count);
+  
+  // Print selected item -->
   elem_t elem_key = {.s = arr_names[id - 1]};
   elem_t found_element;
-
   puts("The following merchandise has been removed:");
   ioopm_hash_table_lookup(items, elem_key, &found_element);
   item_t item = *(item_t*) found_element.v;
   print_item(item, id, true);
+  // <--
   
+  // Free -->
   ioopm_hash_table_remove_entry(items, elem_key);
+  free_hash_table_keys_values((elem_t) {.v = NULL}, found_element, NULL);
+  // <--
 }
 
-void edit_merch(ioopm_hash_table_t *items) // TODO: Not yet working
+void edit_merch(ioopm_hash_table_t *items)
 {
   list_merch(items);
   int merch_count = ioopm_hash_table_size(items);
@@ -119,65 +132,73 @@ void edit_merch(ioopm_hash_table_t *items) // TODO: Not yet working
   ht_names_to_sorted_array(items, arr_names);
   
   int id = ask_question_check_id("Enter the number id of the merchandise you would like to edit:", merch_count); 
+
   elem_t elem_key = {.s = arr_names[id - 1]};
-  elem_t found_element;
-
-  puts("You have selected the following merchandise:");
-  ioopm_hash_table_lookup(items, elem_key, &found_element);
-  item_t item = *(item_t*) found_element.v;
-  print_item(item, id, false);
-
-  while (true) {
-    int answer = ask_question_int("What part of the selected merchandise would you like to edit?\n\
+  int remakes = 0;
+  while (true)
+    {
+      // Print selected item -->
+      elem_t found_element;
+      puts("You have selected the following merchandise:");
+      ioopm_hash_table_lookup(items, elem_key, &found_element);
+      item_t item = *(item_t*) found_element.v;
+      print_item(item, id, false);
+      // <--
+      
+      int answer = ask_question_int("What part of the selected merchandise would you like to edit?\n\
 [1] Name\n\
 [2] Description\n\
 [3] Price\n\
 [4] Nothing, let me out of here\n");
-    if (answer == 1)
-      {
-        char *new_name = ask_question_string("Enter a new name: ");
-        while (merch_exists(items, new_name))
-          {
-            printf("OBS! The name of merchandise you entered already exists in the database.\n");
-            new_name = ask_question_string("Enter a different name: ");
-          }
-        item_t *new_item = remake_merch(item, new_name);
-        elem_t elem_new_key = {.s = new_item->name};
-        elem_t elem_new_value = {.v = new_item};
-        ioopm_hash_table_remove_entry(items, elem_key);
-        ioopm_hash_table_insert(items, elem_new_key, elem_new_value);
-        elem_key = elem_new_key;
-      }
-    else if (answer == 2)
-      {
-        set_item_desc(&item, ask_question_string("Enter a new description: "));
-        elem_t elem_new_value = {.v = &item};
-        ioopm_hash_table_insert(items, elem_key, elem_new_value);
-      }
-    else if (answer == 3)
-      {
-        set_item_price(&item, ask_question_int("Enter a new price: "));
-        elem_t elem_new_value = {.v = &item};
-        ioopm_hash_table_insert(items, elem_key, elem_new_value);
-      }
-    else if (answer == 4)
-      {
-        break;
-      }
-    else
-      {
-        puts("OBS! Enter a number between 1 and 4.");
-        continue;
-      }
-  }
-}
 
-static void free_hash_table_values_keys(elem_t key_ignored, elem_t value, void *x_ignored)
-{
-  free((*(item_t*) value.v).name);
-  free((*(item_t*) value.v).desc);
-  ioopm_linked_list_destroy((*(item_t*) value.v).shelves);
-  free(value.v);
+      if (answer == 1)
+        {
+          char *new_name = ask_question_string("Enter a new name: ");
+          while (merch_exists(items, new_name))
+            {
+              puts("OBS! The name of merchandise you entered already exists in the database.");
+              new_name = ask_question_string("Enter a different name: ");
+            }
+          item_t *new_item = remake_merch(item, new_name);
+          elem_t elem_new_key = {.s = new_item->name};
+          elem_t elem_new_value = {.v = new_item};
+          
+          ioopm_hash_table_insert(items, elem_new_key, elem_new_value);
+
+          // Free --> // TODO: Fix memory leak
+          //free_hash_table_keys_values((elem_t) {.v = NULL}, found_element, NULL); // Invalid read
+          ioopm_hash_table_remove_entry(items, elem_key);
+          // <--
+          
+          elem_key = elem_new_key;
+          remakes++;
+        }
+      else if (answer == 2)
+        {
+          set_item_desc(&item, ask_question_string("Enter a new description: "));
+          item_t *new_item = remake_merch(item, get_item_name(item));
+          elem_t elem_new_value = {.v = new_item};
+          ioopm_hash_table_insert(items, elem_key, elem_new_value);
+          remakes++;
+        }
+      else if (answer == 3)
+        {
+          set_item_price(&item, ask_question_int("Enter a new price: "));
+          item_t *new_item = remake_merch(item, get_item_name(item));
+          elem_t elem_new_value = {.v = new_item};
+          ioopm_hash_table_insert(items, elem_key, elem_new_value);
+          remakes++;
+        }
+      else if (answer == 4)
+        {
+          break;
+        }
+      else
+        {
+          puts("OBS! Enter a number between 1 and 4.");
+          continue;
+        }
+    }
 }
 
 void event_loop()
@@ -250,7 +271,7 @@ Chec[k]out\n\
         }
       if (key == 'Q')
         {
-          ioopm_hash_table_apply_to_all(items, free_hash_table_values_keys, NULL);          
+          ioopm_hash_table_apply_to_all(items, free_hash_table_keys_values, NULL);          
           ioopm_hash_table_destroy(items);
           puts("PROGRAM QUIT");
           break;
