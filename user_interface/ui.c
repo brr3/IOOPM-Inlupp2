@@ -1,10 +1,11 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <stdbool.h>
+#include <assert.h>
 #include "../utils/utils.h"
 #include "../logic/logic.h"
-#include "../logic/elem.h"
-#include <stdbool.h>	
+#include "../logic/elem.h"	
 
 
 static char *ask_question_shelf(char *question)
@@ -126,46 +127,48 @@ void edit_merch(ioopm_hash_table_t *items) // TODO: Not yet working
   item_t item = *(item_t*) found_element.v;
   print_item(item, id, false);
 
-  char *new_name;
-  elem_t elem_new_value;
-  elem_t elem_new_key;
   while (true) {
-  int answer = ask_question_int("What part of the selected merchandise would you like to edit?\n\
+    int answer = ask_question_int("What part of the selected merchandise would you like to edit?\n\
 [1] Name\n\
 [2] Description\n\
 [3] Price\n\
 [4] Nothing, let me out of here\n");
-  switch(answer)
-    {
-    case 1:
-      new_name = ask_question_string("Enter a new name: ");
-      while (merch_exists(items, new_name))
-        {
-          printf("OBS! The name of merchandise you entered already exists in the database.\n");
-          new_name = ask_question_string("Enter a different name: ");
-        }
-      ioopm_hash_table_remove_entry(items, elem_key);
-      item_t *new_item = remake_merch(item, new_name);
-      elem_new_key.s = new_item->name;
-      elem_new_value.v = &new_item;
-      ioopm_hash_table_insert(items, elem_new_key, elem_new_value);
-      elem_key = elem_new_key;
-      break;
-    case 2:
-      set_item_desc(&item, ask_question_string("Enter a new description: "));
-      elem_new_value.v = &item;
-      ioopm_hash_table_insert(items, elem_key, elem_new_value);
-      break;
-    case 3:
-      set_item_price(&item, ask_question_int("Enter a new price: "));
-      elem_new_value.v = &item;
-      ioopm_hash_table_insert(items, elem_key, elem_new_value);
-      break;
-    case 4:
-      return;
-    default:
-      return;
-    }
+    if (answer == 1)
+      {
+        char *new_name = ask_question_string("Enter a new name: ");
+        while (merch_exists(items, new_name))
+          {
+            printf("OBS! The name of merchandise you entered already exists in the database.\n");
+            new_name = ask_question_string("Enter a different name: ");
+          }
+        item_t *new_item = remake_merch(item, new_name);
+        elem_t elem_new_key = {.s = new_item->name};
+        elem_t elem_new_value = {.v = new_item};
+        ioopm_hash_table_remove_entry(items, elem_key);
+        ioopm_hash_table_insert(items, elem_new_key, elem_new_value);
+        elem_key = elem_new_key;
+      }
+    else if (answer == 2)
+      {
+        set_item_desc(&item, ask_question_string("Enter a new description: "));
+        elem_t elem_new_value = {.v = &item};
+        ioopm_hash_table_insert(items, elem_key, elem_new_value);
+      }
+    else if (answer == 3)
+      {
+        set_item_price(&item, ask_question_int("Enter a new price: "));
+        elem_t elem_new_value = {.v = &item};
+        ioopm_hash_table_insert(items, elem_key, elem_new_value);
+      }
+    else if (answer == 4)
+      {
+        break;
+      }
+    else
+      {
+        puts("OBS! Enter a number between 1 and 4.");
+        continue;
+      }
   }
 }
 
