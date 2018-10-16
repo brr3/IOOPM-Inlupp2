@@ -36,6 +36,8 @@ bool merch_exists(ioopm_hash_table_t *items, char *name);
 
 item_t *make_merch(char *name, char *desc, int price);
 
+item_t *remake_merch(item_t item, char *new_name);
+
 char *to_upper(char *str);
 
 void sort_keys(char *keys[], size_t no_keys);

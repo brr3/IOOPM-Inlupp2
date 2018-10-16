@@ -95,6 +95,16 @@ item_t *make_merch(char *name, char *desc, int price)
   return item;
 }
 
+item_t *remake_merch(item_t item, char *new_name)
+{
+  item_t *new_item = calloc(1, sizeof(item_t));
+  set_item_name(new_item, new_name);
+  set_item_desc(new_item, item.desc);
+  set_item_price(new_item, item.price);
+  new_item->shelves = item.shelves;
+  return new_item;
+}
+
 char *to_upper(char* str) // Not working
 {
   while (*str)
