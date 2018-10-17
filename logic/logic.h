@@ -46,6 +46,10 @@ item_t *make_merch(char *name, char *desc, int price);
 
 void remake_merch(ioopm_hash_table_t *items, item_t item, elem_t *elem_old_key);
 
+shelf_t *make_shelf(char *shelf_name, int amount);
+
+shelf_t *find_shelf_in_list(ioopm_list_t *item_locations, char *shelf_name, int *index);
+
 char *to_upper(char *str); // NOT WORKING
 
 void ht_names_to_sorted_array(ioopm_hash_table_t *items, char *arr[]);

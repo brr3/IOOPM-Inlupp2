@@ -5,9 +5,17 @@
 
 void free_hash_table_keys_values(elem_t key_ignored, elem_t value, void *x_ignored)
 {
-  free((*(item_t*) value.v).name);
-  free((*(item_t*) value.v).desc);
-  ioopm_linked_list_destroy((*(item_t*) value.v).shelves);
+  free(get_item_name(*(item_t*) value.v));
+  free(get_item_desc(*(item_t*) value.v));
+  ioopm_list_t *item_locations = get_item_shelves((*(item_t*) value.v));
+  int locations = ioopm_linked_list_size(item_locations);
+  for (int i = 0; i < locations; i++)
+    {
+      shelf_t *shelf = ioopm_linked_list_get(item_locations, i).v;
+      free(get_shelf_name(*shelf));
+      free(shelf);
+    }
+  ioopm_linked_list_destroy(item_locations);
   free(value.v);
 }
 
@@ -131,7 +139,7 @@ item_t *make_merch(char *name, char *desc, int price)
 
 void remake_merch(ioopm_hash_table_t *items, item_t old_item, elem_t *elem_old_key)
 {
-  item_t *new_item = calloc(1, sizeof(item_t));
+  item_t *new_item = calloc(1, sizeof(item_t)); // Side effect
   set_item_name(new_item, old_item.name);
   set_item_desc(new_item, old_item.desc);
   set_item_price(new_item, old_item.price);
@@ -140,9 +148,33 @@ void remake_merch(ioopm_hash_table_t *items, item_t old_item, elem_t *elem_old_k
   elem_t elem_new_key = {.s = new_item->name};
   elem_t elem_new_value = {.v = new_item};
 
-  *elem_old_key = elem_new_key;
+  *elem_old_key = elem_new_key; // Side effect
 
-  ioopm_hash_table_insert(items, elem_new_key, elem_new_value);
+  ioopm_hash_table_insert(items, elem_new_key, elem_new_value); // Side effect
+}
+
+shelf_t *make_shelf(char *shelf_name, int amount)
+{
+  shelf_t *shelf = calloc(1, sizeof(shelf_t));
+  shelf->shelf_name = shelf_name;
+  shelf->amount = amount;
+  return shelf;
+}
+
+shelf_t *find_shelf_in_list(ioopm_list_t *item_locations, char *shelf_name, int *index)
+{
+  int shelves_count = ioopm_linked_list_size(item_locations);
+  shelf_t *shelf;
+  for (int i = 0; i < shelves_count; i++)
+    {
+      shelf = (shelf_t*) ioopm_linked_list_get(item_locations, i).v;
+      if (strcmp(shelf->shelf_name, shelf_name) == 0)
+        {
+          *index = i; // Side effect
+          break;
+        }
+    }
+  return shelf;
 }
 
 char *to_upper(char* str) // Not working
@@ -186,11 +218,12 @@ void print_item(item_t item, int id, bool print_stock)
 
   if (print_stock) // Show stock
     {
-      size_t shelves_count = get_item_shelves_count(item);      
+      int shelves_count = get_item_shelves_count(item);      
       if (shelves_count == 0)
         {
-          printf("--------[ %d ]--------\n", id);
+          printf("--------[ # %d ]--------\n", id);
           printf("Name: %s\nDesc: %s\nPrice: %d.%d\nShelves: None\n", name, desc, kr, ore);
+          puts("------------------------");
           return;
         }
       ioopm_list_t *shelves = get_item_shelves(item);
@@ -199,33 +232,36 @@ void print_item(item_t item, int id, bool print_stock)
       
       if (shelves_count == 1)
         {
-          printf("--------[ %d ]--------\n", id);
-          printf("Name: %s\nDesc: %s\nPrice: %d.%d kr\nShelves: %s\nAmount: %d\n", name, desc, kr, ore, shelf.shelf_name, item_amount);
+          printf("--------[ # %d ]--------\n", id);
+          printf("Name: %s\nDesc: %s\nPrice: %d.%d kr\nShelf: %s\nAmount: %d\n", name, desc, kr, ore, shelf.shelf_name, item_amount);
+          puts("------------------------");
         }
       
       if (shelves_count > 1)
         {
-          printf("--------[ %d ]--------\n", id);
-          printf("Name: %s\nDesc: %s\nPrice: %d.%d kr\nShelves: ", name, desc, kr, ore);
-          for (int i = 0; i < (int) shelves_count; i++)
+          printf("--------[ # %d ]--------\n", id);
+          printf("Name: %s\nDesc: %s\nPrice: %d.%d kr\nShelves:\n", name, desc, kr, ore);
+          for (int i = 0; i < (int) shelves_count; i++) // Optional: sort storage locations
             {
               shelf_t shelf = *((shelf_t*) ioopm_linked_list_get(shelves, i).v); 
-              if (i < (int) shelves_count - 1)
+              if (i < shelves_count - 1)
                 {
-                  printf("%s, ", shelf.shelf_name); 
+                  printf("(%s, %d), ", get_shelf_name(shelf), get_shelf_amount(shelf)); 
                 }
               else
                 {
-                  printf("%s\n", shelf.shelf_name);
+                  printf("(%s, %d)\n", get_shelf_name(shelf), get_shelf_amount(shelf));
                 }
             }
-          printf("Amount: %d\n", item_amount);
+          printf("Total amount: %d\n", item_amount);
+          puts("------------------------");
         }
     }
   else
     {
-      printf("--------[ %d ]--------\n", id);
+      printf("--------[ # %d ]--------\n", id);
       printf("Name: %s\nDesc: %s\nPrice: %d.%d\n", name, desc, kr, ore); // List merchandise
+      puts("------------------------");
       return;
     }
 }
