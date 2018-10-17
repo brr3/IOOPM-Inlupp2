@@ -3,6 +3,13 @@
 #include "logic.h"
 #include "elem.h"
 
+void free_hash_table_keys_values(elem_t key_ignored, elem_t value, void *x_ignored)
+{
+  free((*(item_t*) value.v).name);
+  free((*(item_t*) value.v).desc);
+  ioopm_linked_list_destroy((*(item_t*) value.v).shelves);
+  free(value.v);
+}
 
 int hash_string(elem_t key)
 {
@@ -77,6 +84,33 @@ bool is_menu_key(char *key)
     }
 }
 
+bool is_yn_key(char *key)
+{
+  switch(*key)
+    {
+    case 'Y':
+    case 'y':
+    case 'N':
+    case 'n':
+      return true;
+    default:
+      return false;
+    }
+}
+
+bool no_merch(int merch_count)
+{
+  if (merch_count == 0)
+    {
+      puts("OBS! No merchandise has been added to the warehouse yet.");
+      return true;
+    }
+  else
+    {
+      return false;
+    }
+}
+
 bool merch_exists(ioopm_hash_table_t *items, char *name)
 {
   elem_t found_element;
@@ -95,14 +129,20 @@ item_t *make_merch(char *name, char *desc, int price)
   return item;
 }
 
-item_t *remake_merch(item_t item, char *new_name)
+void remake_merch(ioopm_hash_table_t *items, item_t old_item, elem_t *elem_old_key)
 {
   item_t *new_item = calloc(1, sizeof(item_t));
-  set_item_name(new_item, new_name);
-  set_item_desc(new_item, item.desc);
-  set_item_price(new_item, item.price);
-  new_item->shelves = item.shelves;
-  return new_item;
+  set_item_name(new_item, old_item.name);
+  set_item_desc(new_item, old_item.desc);
+  set_item_price(new_item, old_item.price);
+  new_item->shelves = old_item.shelves;
+
+  elem_t elem_new_key = {.s = new_item->name};
+  elem_t elem_new_value = {.v = new_item};
+
+  *elem_old_key = elem_new_key;
+
+  ioopm_hash_table_insert(items, elem_new_key, elem_new_value);
 }
 
 char *to_upper(char* str) // Not working
@@ -120,7 +160,7 @@ static int cmp_string_ptr(const void *p1, const void *p2)
   return strcmp(*(char *const *) p1, *(char *const *) p2);
 }
 
-void sort_keys(char *keys[], size_t no_keys)
+static void sort_keys(char *keys[], size_t no_keys)
 {  
   qsort(keys, no_keys, sizeof(char *), cmp_string_ptr);
 }

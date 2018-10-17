@@ -24,6 +24,10 @@ struct shelf
   int amount;
 };
 
+void edit_merch(ioopm_hash_table_t *items);
+
+void free_hash_table_keys_values(elem_t key_ignored, elem_t value, void *x_ignored);
+
 int hash_string(elem_t key);
 
 bool cmp_string(elem_t a, elem_t b);
@@ -32,15 +36,17 @@ bool is_shelf(char *shelf);
 
 bool is_menu_key(char *key);
 
+bool is_yn_key(char *key);
+
+bool no_merch(int merch_count);
+
 bool merch_exists(ioopm_hash_table_t *items, char *name);
 
 item_t *make_merch(char *name, char *desc, int price);
 
-item_t *remake_merch(item_t item, char *new_name);
+void remake_merch(ioopm_hash_table_t *items, item_t item, elem_t *elem_old_key);
 
-char *to_upper(char *str);
-
-void sort_keys(char *keys[], size_t no_keys);
+char *to_upper(char *str); // NOT WORKING
 
 void ht_names_to_sorted_array(ioopm_hash_table_t *items, char *arr[]);
 

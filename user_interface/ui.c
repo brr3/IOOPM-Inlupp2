@@ -7,14 +7,6 @@
 #include "../logic/logic.h"
 #include "../logic/elem.h"	
 
-static void free_hash_table_keys_values(elem_t key_ignored, elem_t value, void *x_ignored)
-{
-  free((*(item_t*) value.v).name);
-  free((*(item_t*) value.v).desc);
-  ioopm_linked_list_destroy((*(item_t*) value.v).shelves);
-  free(value.v);
-}
-
 static char *ask_question_shelf(char *question)
 {
   return ask_question(question, is_shelf, (convert_func) strdup).string_value;
@@ -23,6 +15,12 @@ static char *ask_question_shelf(char *question)
 static char ask_question_menu(char *question)
 {
   return toupper(*ask_question(question, is_menu_key, (convert_func) strdup).string_value);
+}
+
+static char ask_question_yes_no(char *question)
+{
+  char *key = ask_question(question, is_yn_key, (convert_func) strdup).string_value;
+  return toupper(*key);
 }
 
 static int ask_question_check_id(char *question, int merch_count)
@@ -48,12 +46,13 @@ static item_t *input_merch(void)
   return make_merch(name, desc, price);
 }
 
-void add_merch(ioopm_hash_table_t *items) // TODO: Add hash table key in ALL caps to prevent multiple occurences of a merchandise
+void add_merch(ioopm_hash_table_t *items)
+// TODO: Add hash table key in ALL caps to prevent multiple occurences of a merchandise
 {
   item_t *item = input_merch();
   while (merch_exists(items, item->name))
     {
-      printf("OBS! The name of merchandise you entered already exists in the database.\n");
+      puts("OBS! The name of merchandise you entered already exists in the database.");
       item->name = ask_question_string("Enter a different name: ");
     }
   elem_t elem_key = {.s = item->name};
@@ -64,27 +63,27 @@ void add_merch(ioopm_hash_table_t *items) // TODO: Add hash table key in ALL cap
 void list_merch(ioopm_hash_table_t *items)
 {
   int merch_count = ioopm_hash_table_size(items);
-  if (merch_count == 0)
+  if (no_merch(merch_count))
     {
-      puts("No merchandise has been added to the warehouse yet!");
       return;
     }
   char *arr_names[merch_count];
   ht_names_to_sorted_array(items, arr_names);
   
-  elem_t found_element;
   int continues = 1;
   for (int i = 0; i < merch_count; i++)
     {
-      elem_t elem_name  = {.s = arr_names[i]};
-      ioopm_hash_table_lookup(items, elem_name, &found_element);
-      item_t item = *(item_t*) found_element.v;
-      
+      // Print item -->
+      elem_t elem_key = {.s = arr_names[i]};
+      elem_t found_element;
+      ioopm_hash_table_lookup(items, elem_key, &found_element);
+      item_t item = *(item_t*) found_element.v; 
       print_item(item, i + 1, false);
+      // <--
       
       while (i == continues * 20 - 1 && merch_count > continues * 20)
         {
-          char key = toupper(*ask_question_string("Continue listing? (y/n)")); // TODO: Fix memory leak
+          char key = ask_question_yes_no(("Continue listing? (y/n)")); // TODO: Fix memory leak
           if (key == 'Y') // If first letter is Y
             {
               continues++;
@@ -92,18 +91,21 @@ void list_merch(ioopm_hash_table_t *items)
             }
           if (key == 'N') // If first letter is N
             {
-              i = merch_count;
-              break;
+              return;
             }
         }
     }
 }
 
-void remove_merch(ioopm_hash_table_t *items) // TODO: When storage location hash table is done, remove entry from there as well
-{ 
-  list_merch(items);
-  
+void remove_merch(ioopm_hash_table_t *items)
+// TODO: When storage location hash table is implemented, remove entry from there as well
+{
   int merch_count = ioopm_hash_table_size(items);
+  if (no_merch(merch_count))
+    {
+      return;
+    }
+  list_merch(items);
   char *arr_names[merch_count];
   ht_names_to_sorted_array(items, arr_names);
   
@@ -112,11 +114,24 @@ void remove_merch(ioopm_hash_table_t *items) // TODO: When storage location hash
   // Print selected item -->
   elem_t elem_key = {.s = arr_names[id - 1]};
   elem_t found_element;
-  puts("The following merchandise has been removed:");
+  puts("You have selected the following merchandise:");
   ioopm_hash_table_lookup(items, elem_key, &found_element);
   item_t item = *(item_t*) found_element.v;
   print_item(item, id, true);
   // <--
+
+  while (true)
+    {
+      char key = ask_question_yes_no(("Are you sure you want to remove the selected merchandise? (y/n)")); // TODO: Fix memory leak
+      if (key == 'Y') // If first letter is Y
+        {
+          break;
+        }
+      if (key == 'N') // If first letter is N
+        {
+          return;
+        }
+    }
   
   // Free -->
   ioopm_hash_table_remove_entry(items, elem_key);
@@ -126,30 +141,33 @@ void remove_merch(ioopm_hash_table_t *items) // TODO: When storage location hash
 
 void edit_merch(ioopm_hash_table_t *items)
 {
-  list_merch(items);
   int merch_count = ioopm_hash_table_size(items);
+  if (no_merch(merch_count))
+    {
+      return;
+    }
+  list_merch(items);
   char *arr_names[merch_count];
   ht_names_to_sorted_array(items, arr_names);
   
   int id = ask_question_check_id("Enter the number id of the merchandise you would like to edit:", merch_count); 
 
   elem_t elem_key = {.s = arr_names[id - 1]};
-  int remakes = 0;
   while (true)
     {
       // Print selected item -->
       elem_t found_element;
       puts("You have selected the following merchandise:");
       ioopm_hash_table_lookup(items, elem_key, &found_element);
-      item_t item = *(item_t*) found_element.v;
-      print_item(item, id, false);
+      item_t old_item = *(item_t*) found_element.v;
+      print_item(old_item, id, false);
       // <--
       
       int answer = ask_question_int("What part of the selected merchandise would you like to edit?\n\
 [1] Name\n\
 [2] Description\n\
 [3] Price\n\
-[4] Nothing, let me out of here\n");
+[4] Nothing, let me out of here");
 
       if (answer == 1)
         {
@@ -159,35 +177,19 @@ void edit_merch(ioopm_hash_table_t *items)
               puts("OBS! The name of merchandise you entered already exists in the database.");
               new_name = ask_question_string("Enter a different name: ");
             }
-          item_t *new_item = remake_merch(item, new_name);
-          elem_t elem_new_key = {.s = new_item->name};
-          elem_t elem_new_value = {.v = new_item};
-          
-          ioopm_hash_table_insert(items, elem_new_key, elem_new_value);
-
-          // Free --> // TODO: Fix memory leak
-          //free_hash_table_keys_values((elem_t) {.v = NULL}, found_element, NULL); // Invalid read
           ioopm_hash_table_remove_entry(items, elem_key);
-          // <--
-          
-          elem_key = elem_new_key;
-          remakes++;
+          set_item_name(&old_item, new_name);
+          remake_merch(items, old_item, &elem_key);
         }
       else if (answer == 2)
         {
-          set_item_desc(&item, ask_question_string("Enter a new description: "));
-          item_t *new_item = remake_merch(item, get_item_name(item));
-          elem_t elem_new_value = {.v = new_item};
-          ioopm_hash_table_insert(items, elem_key, elem_new_value);
-          remakes++;
+          set_item_desc(&old_item, ask_question_string("Enter a new description: "));
+          remake_merch(items, old_item, &elem_key);
         }
       else if (answer == 3)
         {
-          set_item_price(&item, ask_question_int("Enter a new price: "));
-          item_t *new_item = remake_merch(item, get_item_name(item));
-          elem_t elem_new_value = {.v = new_item};
-          ioopm_hash_table_insert(items, elem_key, elem_new_value);
-          remakes++;
+          set_item_price(&old_item, ask_question_int("Enter a new price: "));
+          remake_merch(items, old_item, &elem_key);
         }
       else if (answer == 4)
         {
@@ -199,6 +201,11 @@ void edit_merch(ioopm_hash_table_t *items)
           continue;
         }
     }
+}
+
+void show_merch_stock(ioopm_hash_table_t *items)
+{
+  
 }
 
 void event_loop()
@@ -239,7 +246,7 @@ Chec[k]out\n\
         }
       if (key == 'S')
         {
-          //show_merch_stock(items);
+          show_merch_stock(items);
         }
       if (key == 'P')
         {
