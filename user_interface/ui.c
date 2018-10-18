@@ -191,7 +191,7 @@ void edit_merch(ioopm_hash_table_t *items)
         }
       else if (answer == 4)
         {
-          //remove_item_from_storage(items, item);
+          //remove_item_from_storage(items, item); // Not working
           remake_merch(items, *item, &key); // TODO: Fix memory leak
           break;
         }
@@ -221,7 +221,7 @@ void show_stock(ioopm_hash_table_t *items)
   print_item(item, id, true);
 }
 
-void replenish_stock(ioopm_hash_table_t *items, ioopm_hash_table_t *locations)
+void replenish_stock(ioopm_hash_table_t *items, ioopm_hash_table_t *locations) // TODO: Refactor
 {
   int merch_count = ioopm_hash_table_size(items);
   if (no_merch(merch_count))
