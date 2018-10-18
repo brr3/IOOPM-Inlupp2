@@ -2,6 +2,9 @@ COMPILER = gcc
 OPTIONS = -g -Wall -pedantic
 LINKOPTIONS = -lcunit
 
+main: elem.o logic.o ui.o main.c
+	$(COMPILER) $(OPTIONS) -o main elem.o logic.o ui.o hash_table.o linked_list.o utils.o main.c $(LINKOPTIONS)
+
 tests: elem.o logic.o ui.o tests.c
 	$(COMPILER) $(OPTIONS) -o tests elem.o logic.o ui.o hash_table.o linked_list.o utils.o tests.c $(LINKOPTIONS)
 

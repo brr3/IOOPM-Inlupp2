@@ -7,21 +7,25 @@
 #include "../logic/logic.h"
 #include "../logic/elem.h"	
 
+
 static char *ask_question_shelf(char *question)
 {
   return ask_question(question, is_shelf, (convert_func) strdup).string_value;
 }
+
 
 static char ask_question_menu(char *question)
 {
   return toupper(*ask_question(question, is_menu_key, (convert_func) strdup).string_value);
 }
 
+
 static char ask_question_yes_no(char *question)
 {
   char *key = ask_question(question, is_yn_key, (convert_func) strdup).string_value;
   return toupper(*key);
 }
+
 
 static int ask_question_check_nr(char *question, char *error_msg, int lower_bound, int upper_bound)
 {
@@ -37,6 +41,7 @@ static int ask_question_check_nr(char *question, char *error_msg, int lower_boun
     }
 }
 
+
 static item_t *input_merch(void) 
 {
   char *name = ask_question_string("Enter a name: ");
@@ -46,52 +51,47 @@ static item_t *input_merch(void)
   return make_merch(name, desc, price);
 }
 
+
 void add_merch(ioopm_hash_table_t *items)
 // TODO: Add hash table key in ALL caps to prevent multiple occurences of a merchandise
 {
   item_t *item = input_merch();
-  while (merch_exists(items, item->name))
+  while (merch_exists(items, get_item_name(*item)))
     {
       puts("OBS! The name of merchandise you entered already exists in the database.");
-      item->name = ask_question_string("Enter a different name: ");
+      set_item_name(item, ask_question_string("Enter a different name: "));
     }
-  elem_t elem_key = {.s = item->name};
-  elem_t elem_value = {.v = item};
-  ioopm_hash_table_insert(items, elem_key, elem_value);
+  add_item_to_storage(items, item);
 }
+
 
 void list_merch(ioopm_hash_table_t *items, bool print_stock)
 {
-  // List all items and put all names into a sorted array -->
   int merch_count = ioopm_hash_table_size(items);
   if (no_merch(merch_count))
     {
       return;
     }
+  
   char *arr_names[merch_count];
-  ht_names_to_sorted_array(items, arr_names);
-  // <--
+  storage_names_to_sorted_array(items, arr_names);
   
   int continues = 1;
   for (int i = 0; i < merch_count; i++)
     {
-      elem_t elem_key = {.s = arr_names[i]};
-      // Print item -->
-      elem_t found_element;
-      ioopm_hash_table_lookup(items, elem_key, &found_element);
-      item_t item = *(item_t*) found_element.v; 
+      item_t item = *extract_item_from_storage(items, i, arr_names, NULL);      
+
       print_item(item, i + 1, print_stock);
-      // <--
       
       while (i == continues * 20 - 1 && merch_count > continues * 20)
         {
           char key = ask_question_yes_no(("Continue listing? (y/n)")); // TODO: Fix memory leak
-          if (key == 'Y') // If first letter is Y
+          if (key == 'Y') 
             {
               continues++;
               break;
             }
-          if (key == 'N') // If first letter is N
+          if (key == 'N')
             {
               return;
             }
@@ -99,75 +99,67 @@ void list_merch(ioopm_hash_table_t *items, bool print_stock)
     }
 }
 
+
 void remove_merch(ioopm_hash_table_t *items)
-// TODO: When storage location hash table is implemented, remove entry from there as well
 {
-  // List all items, put all names into a sorted array and ask user for ID -->
   int merch_count = ioopm_hash_table_size(items);
   if (no_merch(merch_count))
     {
       return;
     }
   list_merch(items, false);
+  
   char *arr_names[merch_count];
-  ht_names_to_sorted_array(items, arr_names);
+  storage_names_to_sorted_array(items, arr_names);
   
   int id = ask_question_check_nr("Enter the number id of the merchandise you would like to remove:", "OBS! A merchandise with that ID does not exist.", 1, merch_count);
-  // <--
 
-  elem_t elem_key = {.s = arr_names[id - 1]};
-  // Print selected item -->
-  elem_t found_element;
+  elem_t ignored_value;
+  item_t *item = extract_item_from_storage(items, id - 1, arr_names, &ignored_value);
+  
   puts("You have selected the following merchandise:");
-  ioopm_hash_table_lookup(items, elem_key, &found_element);
-  item_t item = *(item_t*) found_element.v;
-  print_item(item, id, true);
-  // <--
+  print_item(*item, id, true);
 
   while (true)
     {
       char key = ask_question_yes_no(("Are you sure you want to remove the selected merchandise? (y/n)")); // TODO: Fix memory leak
-      if (key == 'Y') // If first letter is Y
+      if (key == 'Y')
         {
           break;
         }
-      if (key == 'N') // If first letter is N
+      if (key == 'N')
         {
           return;
         }
     }
-  
-  // Free -->
-  ioopm_hash_table_remove_entry(items, elem_key);
-  free_hash_table_keys_values((elem_t) {.v = NULL}, found_element, NULL);
-  // <--
+  remove_item_from_storage(items, item);
+  puts("Merchandise successfully removed!");
 }
+
 
 void edit_merch(ioopm_hash_table_t *items)
 {
-  // List all items, put all names into a sorted array and ask user for ID -->
   int merch_count = ioopm_hash_table_size(items);
   if (no_merch(merch_count))
     {
       return;
     }
   list_merch(items, false);
+  
   char *arr_names[merch_count];
-  ht_names_to_sorted_array(items, arr_names);
+  storage_names_to_sorted_array(items, arr_names);
   
   int id = ask_question_check_nr("Enter the number id of the merchandise you would like to edit:", "OBS! A merchandise with that ID does not exist.", 1, merch_count); 
   // <--
 
-  elem_t elem_key = {.s = arr_names[id - 1]};
+  elem_t key = {.s = arr_names[id - 1]};
+  elem_t ignored_value;
+  item_t *item = extract_item_from_storage(items, id - 1, arr_names, &ignored_value);
+
   while (true)
-    {
-      // Print selected item -->
-      elem_t found_element;
+    {    
       puts("You have selected the following merchandise:");
-      ioopm_hash_table_lookup(items, elem_key, &found_element);
-      item_t *old_item = (item_t*) found_element.v;
-      print_item(*old_item, id, false);
-      // <--
+      print_item(*item, id, false);
       
       int answer = ask_question_int("What part of the selected merchandise would you like to edit?\n\
 [1] Name\n\
@@ -183,24 +175,24 @@ void edit_merch(ioopm_hash_table_t *items)
               puts("OBS! The name of merchandise you entered already exists in the database.");
               new_name = ask_question_string("Enter a different name: ");
             }
-          ioopm_hash_table_remove_entry(items, elem_key);
-          set_item_name(old_item, new_name);
-          remake_merch(items, *old_item, &elem_key);
+          ioopm_hash_table_remove_entry(items, key);
+          set_item_name(item, new_name);
+          key.s = new_name;
         }
       else if (answer == 2)
         {
-          set_item_desc(old_item, ask_question_string("Enter a new description: "));
-          elem_t elem_new_value = {.v = old_item};
-          ioopm_hash_table_insert(items, elem_key, elem_new_value);
+          set_item_desc(item, ask_question_string("Enter a new description: "));
+          add_item_to_storage(items, item);
         }
       else if (answer == 3)
         {
-          set_item_price(old_item, ask_question_int("Enter a new price: "));
-          elem_t elem_new_value = {.v = old_item};
-          ioopm_hash_table_insert(items, elem_key, elem_new_value);
+          set_item_price(item, ask_question_int("Enter a new price: "));
+          add_item_to_storage(items, item);
         }
       else if (answer == 4)
         {
+          //remove_item_from_storage(items, item);
+          remake_merch(items, *item, &key); // TODO: Fix memory leak
           break;
         }
       else
@@ -213,61 +205,51 @@ void edit_merch(ioopm_hash_table_t *items)
 
 void show_stock(ioopm_hash_table_t *items)
 {
-  // List all items, put all names into a sorted array and ask user for ID -->
   int merch_count = ioopm_hash_table_size(items);
   if (no_merch(merch_count))
     {
       return;
     }
   list_merch(items, false);
+  
   char *arr_names[merch_count];
-  ht_names_to_sorted_array(items, arr_names);
+  storage_names_to_sorted_array(items, arr_names);
   
   int id = ask_question_check_nr("Enter the number id of the merchandise you would like to show the stock from:", "OBS! A merchandise with that ID does not exist.", 1, merch_count);
-  // <--
 
-  elem_t elem_key = {.s = arr_names[id - 1]};
-
-  // Print selected item -->
-  elem_t found_element;
-  ioopm_hash_table_lookup(items, elem_key, &found_element);
-  item_t item = *(item_t*) found_element.v;
+  item_t item = *extract_item_from_storage(items, id - 1, arr_names, NULL);
   print_item(item, id, true);
-  // <--
 }
 
 void replenish_stock(ioopm_hash_table_t *items, ioopm_hash_table_t *locations)
 {
-  // List all items, put all names into a sorted array and ask user for ID -->
   int merch_count = ioopm_hash_table_size(items);
   if (no_merch(merch_count))
     {
       return;
     }
   list_merch(items, true);
+  
   char *arr_names[merch_count];
-  ht_names_to_sorted_array(items, arr_names);
+  storage_names_to_sorted_array(items, arr_names);
   
   int id = ask_question_check_nr("Enter the number id of the merchandise you would like to replenish the stock of:", "OBS! A merchandise with that ID does not exist.", 1, merch_count);
-  // <--
+
+  elem_t found_value;
+  item_t *item = extract_item_from_storage(items, id - 1, arr_names, &found_value);
+  
+  puts("You have selected the following merchandise:");
+  print_item(*item, id, true);
 
   elem_t elem_key = {.s = arr_names[id - 1]};
-  // Print selected item -->
-  elem_t found_element;
-  puts("You have selected the following merchandise:");
-  ioopm_hash_table_lookup(items, elem_key, &found_element);
-  item_t *item = (item_t*) found_element.v;
-  print_item(*item, id, true);
-  // <--
-  
   while (true)
     {
       char *shelf_name = ask_question_shelf("Enter a storage location:\n\
 (format: yxx, where y = letter 'A-Z', x = digit 0-9)");
 
       elem_t elem_shelf_name = {.s = shelf_name};
-      bool location_exists = ioopm_hash_table_lookup(locations, elem_shelf_name, &found_element);
-      bool names_equal = strcmp(found_element.s, item->name) == 0;
+      bool location_exists = ioopm_hash_table_lookup(locations, elem_shelf_name, &found_value);
+      bool names_equal = strcmp(found_value.s, item->name) == 0;
       
       if (location_exists && names_equal)
         {

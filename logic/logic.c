@@ -137,20 +137,18 @@ item_t *make_merch(char *name, char *desc, int price)
   return item;
 }
 
-void remake_merch(ioopm_hash_table_t *items, item_t old_item, elem_t *elem_old_key)
-{
+void remake_merch(ioopm_hash_table_t *items, item_t old_item, elem_t *old_key)
+{           
   item_t *new_item = calloc(1, sizeof(item_t)); // Side effect
-  set_item_name(new_item, old_item.name);
-  set_item_desc(new_item, old_item.desc);
-  set_item_price(new_item, old_item.price);
-  new_item->shelves = old_item.shelves;
+  set_item_name(new_item, get_item_name(old_item));
+  set_item_desc(new_item, get_item_desc(old_item));
+  set_item_price(new_item, get_item_price(old_item));
+  set_item_shelves(new_item, get_item_shelves(old_item));
 
-  elem_t elem_new_key = {.s = new_item->name};
-  elem_t elem_new_value = {.v = new_item};
-
-  *elem_old_key = elem_new_key; // Side effect
-
-  ioopm_hash_table_insert(items, elem_new_key, elem_new_value); // Side effect
+  add_item_to_storage(items, new_item); // Side effect
+  
+  //elem_t new_key = {.s = get_item_name(*new_item)};
+  //*old_key = new_key; // Side effect
 }
 
 shelf_t *make_shelf(char *shelf_name, int amount)
@@ -197,16 +195,50 @@ static void sort_keys(char *keys[], size_t no_keys)
   qsort(keys, no_keys, sizeof(char *), cmp_string_ptr);
 }
 
-void ht_names_to_sorted_array(ioopm_hash_table_t *items, char *arr_names[])
+void add_item_to_storage(ioopm_hash_table_t *items, item_t *item)
+{
+  elem_t elem_key = {.s = get_item_name(*item)};
+  elem_t elem_value = {.v = item};
+  ioopm_hash_table_insert(items, elem_key, elem_value); // Side effect
+}
+
+void remove_item_from_storage(ioopm_hash_table_t *items, item_t *item)
+{
+  elem_t key_to_remove = {.s = get_item_name(*item)};
+  elem_t value_to_remove = {.v = item};
+  ioopm_hash_table_remove_entry(items, key_to_remove);
+  free_hash_table_keys_values((elem_t) {.v = NULL}, value_to_remove, NULL);
+}
+
+void storage_names_to_sorted_array(ioopm_hash_table_t *items, char *arr_names[])
 {
   int merch_count = ioopm_hash_table_size(items);
   ioopm_list_t *merch_names = ioopm_hash_table_keys(items);
   for (int i = 0; i < merch_count; i++)
     {
-      arr_names[i] = ioopm_linked_list_remove(merch_names, i).s; // Faster than linked_list_get
+      arr_names[i] = ioopm_linked_list_remove(merch_names, i).s; // Side effect
     }
-  sort_keys(arr_names, merch_count);
+  sort_keys(arr_names, merch_count); // Side effect
   ioopm_linked_list_destroy(merch_names);
+}
+
+item_t *extract_item_from_storage(ioopm_hash_table_t *items, int i, char *arr_names[], elem_t *found_value)
+{
+  if (found_value == NULL)
+    {
+      elem_t found_value;
+      elem_t elem_key = {.s = arr_names[i]};
+      ioopm_hash_table_lookup(items, elem_key, &found_value);
+      item_t *item = (item_t*) found_value.v;
+      return item;
+    }
+  else
+    {
+      elem_t elem_key = {.s = arr_names[i]};
+      ioopm_hash_table_lookup(items, elem_key, found_value); // Side effect
+      item_t *item = (item_t*) found_value->v;
+      return item;
+    }
 }
 
 void print_item(item_t item, int id, bool print_stock)
