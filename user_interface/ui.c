@@ -92,14 +92,14 @@ static item_t *input_merch(void)
 void add_merch(storage_t *storage)
 {
   item_t *item = input_merch();
-  while (merch_exists(storage->items, to_upper(get_item_name(*item))))
+  while (merch_exists(storage, to_upper(get_item_name(*item))))
     {
       puts("OBS! The name of merchandise you entered already exists in the database.");
       free(item->name);
       set_item_name(item, ask_question_string("Enter a different name: "));
     }
   set_item_name(item, to_upper(get_item_name(*item)));
-  add_item_to_storage(storage->items, item);
+  add_item_to_storage(storage, item);
 }
 
 
@@ -114,12 +114,12 @@ void list_merch(storage_t *storage, bool print_stock)
     }
   
   char *arr_names[merch_count];
-  storage_names_to_sorted_array(storage->items, arr_names);
+  storage_names_to_sorted_array(storage, arr_names);
   
   int continues = 1;
   for (int i = 0; i < merch_count; i++)
     {
-      item_t item = *extract_item_from_storage(storage->items, arr_names[i], NULL);      
+      item_t item = *extract_item_from_storage(storage, arr_names[i], NULL);      
 
       print_item(item, i + 1, print_stock);
 
@@ -157,26 +157,28 @@ void remove_merch(storage_t *storage)
   list_merch(storage, false);
   
   char *arr_names[merch_count];
-  storage_names_to_sorted_array(storage->items, arr_names);
+  storage_names_to_sorted_array(storage, arr_names);
 
   int lower_bound = 1;
   int upper_bound = merch_count;
   int id = ask_question_check_nr("Enter the number id of the merchandise you would like to remove:", "OBS! A merchandise with that ID does not exist.", &lower_bound, &upper_bound);
 
   elem_t ignored_value;
-  item_t *item = extract_item_from_storage(storage->items, arr_names[id - 1], &ignored_value);
+  item_t *item = extract_item_from_storage(storage, arr_names[id - 1], &ignored_value);
   
   puts("You have selected the following merchandise:");
   print_item(*item, id, true);
 
   while (true)
     {
-      char *key = ask_question_yes_no(("Are you sure you want to remove the selected merchandise on all listed storage locations? (y/n)"));
+      char *key = ask_question_yes_no(("Are you sure you want to remove the selected merchandise on all its storage locations? (y/n)"));
       char key_up = toupper(*key);
       if (key_up == 'Y')
         {
+          remove_item_from_storage(storage, item);
           free(key);
-          break;
+          free_hash_table_keys_values((elem_t) {.v = NULL}, ignored_value, NULL);
+          return;
         }
       if (key_up == 'N')
         {
@@ -185,8 +187,6 @@ void remove_merch(storage_t *storage)
         }
       free(key);
     }
-  remove_item_from_storage(storage->items, item);
-  puts("Merchandise successfully removed!");
 }
 
 
@@ -202,14 +202,14 @@ void edit_merch(storage_t *storage)
   list_merch(storage, false);
   
   char *arr_names[merch_count];
-  storage_names_to_sorted_array(storage->items, arr_names);
+  storage_names_to_sorted_array(storage, arr_names);
 
   int lower_bound = 1;
   int upper_bound = merch_count;
   int id = ask_question_check_nr("Enter the number id of the merchandise you would like to edit:", "OBS! A merchandise with that ID does not exist.", &lower_bound, &upper_bound); 
 
   elem_t ignored_value;
-  item_t *item = extract_item_from_storage(storage->items, arr_names[id - 1], &ignored_value);
+  item_t *item = extract_item_from_storage(storage, arr_names[id - 1], &ignored_value);
 
   while (true)
     {    
@@ -227,29 +227,29 @@ void edit_merch(storage_t *storage)
       if (answer == 1)
         {
           char *new_name = ask_question_string("Enter a new name: ");
-          while (merch_exists(storage->items, new_name))
+          while (merch_exists(storage, to_upper(new_name)))
             {
               puts("OBS! The name of merchandise you entered already exists in the database.");
               new_name = ask_question_string("Enter a different name: ");
             }
-          remove_item_from_storage(storage->items, item);
+          remove_item_from_storage(storage, item);
           free(item->name);
-          set_item_name(item, new_name);
+          set_item_name(item, to_upper(new_name));
         }
       else if (answer == 2)
         {
           free(item->desc);
           set_item_desc(item, ask_question_string("Enter a new description: "));
-          add_item_to_storage(storage->items, item);
+          add_item_to_storage(storage, item);
         }
       else if (answer == 3)
         {
           set_item_price(item, ask_question_int("Enter a new price: "));
-          add_item_to_storage(storage->items, item);
+          add_item_to_storage(storage, item);
         }
       else
         {
-          remake_merch(storage->items, item);
+          remake_merch(storage, item);
           break;
         }
     }
@@ -268,13 +268,13 @@ void show_stock(storage_t *storage)
   list_merch(storage, false);
   
   char *arr_names[merch_count];
-  storage_names_to_sorted_array(storage->items, arr_names);
+  storage_names_to_sorted_array(storage, arr_names);
 
   int lower_bound = 1;
   int upper_bound = merch_count;
   int id = ask_question_check_nr("Enter the number id of the merchandise you would like to show the stock from:", "OBS! A merchandise with that ID does not exist.", &lower_bound, &upper_bound);
 
-  item_t item = *extract_item_from_storage(storage->items, arr_names[id - 1], NULL);
+  item_t item = *extract_item_from_storage(storage, arr_names[id - 1], NULL);
   print_item(item, id, true);
 }
 
@@ -292,14 +292,14 @@ void replenish_stock(storage_t *storage)
   list_merch(storage, true);
   
   char *arr_names[merch_count];
-  storage_names_to_sorted_array(items, arr_names);
+  storage_names_to_sorted_array(storage, arr_names);
 
   int lower_bound = 1;
   int upper_bound = merch_count;
   int id = ask_question_check_nr("Enter the number id of the merchandise you would like to replenish the stock of:", "OBS! A merchandise with that ID does not exist.", &lower_bound, &upper_bound);
 
   elem_t found_value;
-  item_t *item = extract_item_from_storage(items, arr_names[id - 1], &found_value);
+  item_t *item = extract_item_from_storage(storage, arr_names[id - 1], &found_value);
 
   puts("You have selected the following merchandise:");
   print_item(*item, id, true);
@@ -310,27 +310,26 @@ void replenish_stock(storage_t *storage)
 (format: yxx, where y = letter 'A-Z', x = digit 0-9)");
 
       elem_t elem_shelf_name = {.s = shelf_name};
-      ioopm_hash_table_t *locations = storage->locations;
-      bool location_exists = ioopm_hash_table_lookup(locations, elem_shelf_name, NULL);
+      bool location_exists = ioopm_hash_table_lookup(storage->locations, elem_shelf_name, &found_value);
       bool names_equal = strcmp(found_value.s, get_item_name(*item)) == 0;
-      
+
+      printf("location exists : %d\nnames equal : %d\n", location_exists, names_equal);
       if (location_exists && names_equal)
         {
-          ioopm_list_t *item_shelves = get_item_shelves(*item);
           int tmp = 0;
           int *index = &tmp; // Aliaseringsproblem G15
-          shelf_t *shelf = find_shelf_in_list(item_shelves, shelf_name, index);
-          ioopm_linked_list_remove(item_shelves, *index);
+          shelf_t *shelf = find_shelf_in_list(get_item_shelves(*item), shelf_name, index);
+          ioopm_linked_list_remove(get_item_shelves(*item), *index);
 
           int lower_bound = 1;
           int stock_increase = ask_question_check_nr("Enter how much you want to increase the stock by:", "OBS! Minimum value is 1.", &lower_bound, NULL);
           
           increase_shelf_amount(shelf, stock_increase);
           
-          add_shelf_to_item_shelves(item_shelves, shelf);
+          add_shelf_to_item_shelves(get_item_shelves(*item), shelf);
           
-          set_item_shelves(item, item_shelves);
-          add_item_to_storage(items, item);
+          set_item_shelves(item, get_item_shelves(*item));
+          add_item_to_storage(storage, item);
         }
       
       if (location_exists && !names_equal)
@@ -345,13 +344,12 @@ void replenish_stock(storage_t *storage)
           int stock_increase = ask_question_check_nr("Enter how much you want to increase the stock by:", "OBS! Minimum value is 1.", &lower_bound, NULL);
           shelf_t *shelf = make_shelf(shelf_name, stock_increase);
 
-          ioopm_list_t *item_shelves = get_item_shelves(*item);
-          add_shelf_to_item_shelves(item_shelves, shelf);
+          add_shelf_to_item_shelves(get_item_shelves(*item), shelf);
           
-          set_item_shelves(item, item_shelves);
-          add_item_to_storage(items, item);
+          set_item_shelves(item, get_item_shelves(*item));
+          add_item_to_storage(storage, item);
 
-          add_shelf_to_locations(locations, shelf);
+          add_shelf_to_locations(storage, get_shelf_name(*shelf), get_item_name(*item));
         }      
       puts("Merchandise successfully replenished!");
       break;
