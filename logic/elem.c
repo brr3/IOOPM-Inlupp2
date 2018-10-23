@@ -1,6 +1,5 @@
 #include "elem.h"
 
-
 char *get_item_name(item_t item)
 {
   return item.name;

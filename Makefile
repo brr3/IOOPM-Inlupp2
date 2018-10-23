@@ -23,6 +23,9 @@ dependencies: data_structures/linked_list.c data_structures/hash_table.c utils/u
 memtest: tests
 	valgrind --leak-check=full ./tests
 
+memtest_loop: main
+	valgrind --leak-check=full ./main
+
 clean:
 	rm *.o tests
 

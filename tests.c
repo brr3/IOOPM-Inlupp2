@@ -17,7 +17,6 @@ static int clean_suite(void)
 
 int main(void)
 {
-  event_loop();
   /*
   CU_pSuite pSuiteNW = NULL;
   

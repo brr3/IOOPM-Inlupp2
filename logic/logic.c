@@ -1,14 +1,16 @@
 #include <stdio.h>
 #include <stdbool.h>
+#include <assert.h>
 #include "logic.h"
 #include "elem.h"
 
 
-void free_hash_table_keys_values(elem_t key_ignored, elem_t value, void *x_ignored)
+
+static void free_hash_table_keys_values(elem_t elem_key_ignored, elem_t elem_value, void *_x_ignored)
 {
-  free(get_item_name(*(item_t*) value.v));
-  free(get_item_desc(*(item_t*) value.v));
-  ioopm_list_t *item_locations = get_item_shelves((*(item_t*) value.v));
+  free(get_item_name(*(item_t*) elem_value.v));
+  free(get_item_desc(*(item_t*) elem_value.v));
+  ioopm_list_t *item_locations = get_item_shelves((*(item_t*) elem_value.v));
   int locations = ioopm_linked_list_size(item_locations);
   for (int i = 0; i < locations; i++)
     {
@@ -17,8 +19,17 @@ void free_hash_table_keys_values(elem_t key_ignored, elem_t value, void *x_ignor
       free(shelf);
     }
   ioopm_linked_list_destroy(item_locations);
-  free(value.v);
+  free(elem_value.v);
 }
+
+void destroy_storage(storage_t *storage)
+{
+  ioopm_hash_table_apply_to_all(storage->items, free_hash_table_keys_values, NULL);          
+  ioopm_hash_table_destroy(storage->items);
+  ioopm_hash_table_destroy(storage->locations);
+  free(storage);
+}
+
 
 
 int hash_string(elem_t key)
@@ -34,10 +45,12 @@ int hash_string(elem_t key)
 }
 
 
+
 bool cmp_string(elem_t a, elem_t b)
 {
   return strcmp(a.s, b.s) == 0;
 }
+
 
 
 bool is_shelf(char *shelf)
@@ -59,6 +72,7 @@ bool is_shelf(char *shelf)
   --str;
   return isdigit(*str);
 }
+
 
 
 bool is_menu_key(char *key)
@@ -98,6 +112,7 @@ bool is_menu_key(char *key)
 }
 
 
+
 bool is_yn_key(char *key)
 {
   switch(*key)
@@ -113,18 +128,17 @@ bool is_yn_key(char *key)
 }
 
 
-bool no_merch(int merch_count)
+
+storage_t *make_storage()
 {
-  if (merch_count == 0)
-    {
-      puts("OBS! No merchandise has been added to the warehouse yet.");
-      return true;
-    }
-  else
-    {
-      return false;
-    }
+  ioopm_hash_table_t *items = ioopm_hash_table_create_custom(hash_string, cmp_string, 17, 0.9);
+  ioopm_hash_table_t *locations = ioopm_hash_table_create_custom(hash_string, cmp_string, 17, 0.9);
+  storage_t *storage = calloc(1, sizeof(shelf_t));
+  storage->items = items;
+  storage->locations = locations;
+  return storage;
 }
+
 
 
 bool merch_exists(ioopm_hash_table_t *items, char *name)
@@ -133,6 +147,7 @@ bool merch_exists(ioopm_hash_table_t *items, char *name)
   elem_t elem_name = {.s = name};
   return ioopm_hash_table_lookup(items, elem_name, &found_element);
 }
+
 
 
 item_t *make_merch(char *name, char *desc, int price) 
@@ -145,6 +160,7 @@ item_t *make_merch(char *name, char *desc, int price)
   item->shelves = shelves;
   return item;
 }
+
 
 
 void remake_merch(ioopm_hash_table_t *items, item_t *old_item)
@@ -161,6 +177,7 @@ void remake_merch(ioopm_hash_table_t *items, item_t *old_item)
 }
 
 
+
 shelf_t *make_shelf(char *shelf_name, int amount)
 {
   shelf_t *shelf = calloc(1, sizeof(shelf_t));
@@ -168,6 +185,7 @@ shelf_t *make_shelf(char *shelf_name, int amount)
   shelf->amount = amount;
   return shelf;
 }
+
 
 
 shelf_t *find_shelf_in_list(ioopm_list_t *item_locations, char *shelf_name, int *index)
@@ -187,27 +205,21 @@ shelf_t *find_shelf_in_list(ioopm_list_t *item_locations, char *shelf_name, int 
 }
 
 
-char *to_upper(char* str) // Not working
+
+char *to_upper(char *str)
 {
-  while (*str)
-    {
-      *str = toupper((unsigned char) *str);
-      str++;
-    }
-  return str;
+   int c = 0;  
+   while (str[c] != '\0')
+     {
+       if (str[c] >= 'a' && str[c] <= 'z')
+         {
+           str[c] = str[c] - 32;
+         }
+       c++;
+     }
+   return str;
 }
 
-
-static int cmp_string_ptr(const void *p1, const void *p2)
-{
-  return strcmp(*(char *const *) p1, *(char *const *) p2);
-}
-
-
-static void sort_keys(char *keys[], size_t no_keys)
-{  
-  qsort(keys, no_keys, sizeof(char *), cmp_string_ptr);
-}
 
 
 void add_item_to_storage(ioopm_hash_table_t *items, item_t *item)
@@ -218,12 +230,29 @@ void add_item_to_storage(ioopm_hash_table_t *items, item_t *item)
 }
 
 
-void remove_item_from_storage(ioopm_hash_table_t *items, item_t *item)
+
+/*static void free_locations_for_merch(elem_t ignored_key, elem_t value, void*x)
 {
-  elem_t key_to_remove = {.s = get_item_name(*item)};
-  ioopm_hash_table_remove_entry(items, key_to_remove);
+  
+} */
+
+void remove_item_from_storage(storage_t *storage, item_t *item)
+{
+  elem_t elem_key_to_remove = {.s = get_item_name(*item)};
+  ioopm_hash_table_remove_entry(storage->items, elem_key_to_remove);
 }
 
+
+
+static int cmp_string_ptr(const void *p1, const void *p2)
+{
+  return strcmp(*(char *const *) p1, *(char *const *) p2);
+}
+
+static void sort_keys(char *keys[], size_t no_keys)
+{  
+  qsort(keys, no_keys, sizeof(char *), cmp_string_ptr);
+}
 
 void storage_names_to_sorted_array(ioopm_hash_table_t *items, char *arr_names[])
 {
@@ -234,43 +263,55 @@ void storage_names_to_sorted_array(ioopm_hash_table_t *items, char *arr_names[])
       arr_names[i] = ioopm_linked_list_remove(merch_names, i).s; // Side effect
     }
   sort_keys(arr_names, merch_count); // Side effect
-  ioopm_linked_list_destroy(merch_names);
+  ioopm_linked_list_destroy(merch_names); // Side effect
 }
 
 
-item_t *extract_item_from_storage(ioopm_hash_table_t *items, int i, char *arr_names[], elem_t *found_value)
+
+item_t *extract_item_from_storage(ioopm_hash_table_t *items, char *item_name, elem_t *found_value)
 {
   if (found_value == NULL)
     {
       elem_t found_value;
-      elem_t elem_key = {.s = arr_names[i]};
+      elem_t elem_key = {.s = item_name};
       ioopm_hash_table_lookup(items, elem_key, &found_value);
       item_t *item = (item_t*) found_value.v;
+      if (item == NULL)
+        {
+          assert(false); // Defensiv programmering I22
+        }
       return item;
     }
   else
     {
-      elem_t elem_key = {.s = arr_names[i]};
+      elem_t elem_key = {.s = item_name};
       ioopm_hash_table_lookup(items, elem_key, found_value); // Side effect
       item_t *item = (item_t*) found_value->v;
+      if (item == NULL)
+        {
+          assert(false); // Defensiv programmering I22
+        }
       return item;
     }
 }
 
 
-void add_shelf_to_list(ioopm_list_t *item_locations, shelf_t *shelf)
+
+void add_shelf_to_item_shelves(ioopm_list_t *item_shelves, shelf_t *shelf)
 {
   elem_t elem_shelf = {.v = shelf};          
-  ioopm_linked_list_prepend(item_locations, elem_shelf); // Side effect
+  ioopm_linked_list_prepend(item_shelves, elem_shelf); // Side effect
 }
 
 
-void add_shelf_to_ht(ioopm_hash_table_t *locations, shelf_t *shelf)
+
+void add_shelf_to_locations(ioopm_hash_table_t *locations, shelf_t *shelf)
 {
   elem_t elem_key = {.s = get_shelf_name(*shelf)};
   elem_t elem_value = {.v = shelf};
   ioopm_hash_table_insert(locations, elem_key, elem_value); // Side effect
 }
+
 
 
 void print_item(item_t item, int id, bool print_stock)
