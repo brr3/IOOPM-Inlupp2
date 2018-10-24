@@ -30,35 +30,59 @@ struct shelf
   int amount;
 };
 
-void free_hash_table_keys_values(elem_t elem_key_ignored, elem_t elem_value, void *x_ignored);
-
-/// @brief Free all data stored in memory by merchandise
+/// @brief         | Free all memory allocated by storage. Must be run before program quits.
 /// @param storage | A storage containing two hash tables, one that maps names of merchandise to the address of the full information for that merchandise, and one that maps names of storage locations to the name of the merchandise stored at that location
 void destroy_storage(storage_t *storage);
 
-int hash_string(elem_t key);
-
-bool cmp_string(elem_t a, elem_t b);
-
+/// @brief     | Check if the entered string is a valid shelf
+/// @param key | Key to check
+/// @return    | True if key is valid, else false
 bool is_shelf(char *shelf);
 
+/// @brief     | Check if the entered string begins with a valid menu key
+/// @param key | Key to check
+/// @return    | True if key is valid, else false
 bool is_menu_key(char *key);
 
+/// @brief     | Check if the entered string begins with y, Y, n or N
+/// @param key | Key to check
+/// @return    | True if key is valid, else false
 bool is_yn_key(char *key);
 
+/// @brief            | Check if a merchandise exists in storage
+/// @param storage    | A storage containing two hash tables, one that maps names of merchandise to the address of the full information for that merchandise, and one that maps names of storage locations to the name of the merchandise stored at that location
+/// @param merch_name | The name of the merchandise to check
+/// @return           | True if merchandise exists in storage, else false
+bool merch_exists(storage_t *storage, char *merch_name);
+
+/// @brief  | Initialise the storage. Must be run before program starts.
+/// @return | The initialised storage
 storage_t *make_storage();
 
-bool merch_exists(storage_t *storage, char *name);
-
+/// @brief       | Create a merchandise with the given parameters
+/// @param name  | Name of the merchandise
+/// @param desc  | Description of the merchandise
+/// @param price | Price of the merchandise
+/// @return      | A newly created merchandise
 item_t *make_merch(char *name, char *desc, int price);
 
+/// @brief         | Transfer details of an existing merchandise to a newly allocated merchandise and add it to storage. Must be run after removing an existing merchandise from storage in conjunction with changing the name of that merchandise.
+/// @param storage | A storage containing two hash tables, one that maps names of merchandise to the address of the full information for that merchandise, and one that maps names of storage locations to the name of the merchandise stored at that location
+/// @param item    | The merchandise to transfer details from 
 void remake_merch(storage_t *storage, item_t *item);
 
+/// @brief        | Create a shelf with the given parameters
+/// @param name   | Name of the shelf
+/// @param amount | Amount of merchandise to be stored on the shelf
+/// @return       | A newly created shelf
 shelf_t *make_shelf(char *shelf_name, int amount);
 
-shelf_t *find_shelf_in_list(ioopm_list_t *item_locations, char *shelf_name, int *index);
-
-char *to_upper(char *str);
+/// @brief              | Find the specified shelf in a list of shelves
+/// @param item_shelves | List operated upon
+/// @param shelf_name   | Name of the shelf sought
+/// @param index        | The index of the found shelf in the list, visible outside the function
+/// @return             | The found shelf
+shelf_t *find_shelf_in_item_shelves(ioopm_list_t *item_shelves, char *shelf_name, int *index);
 
 void add_item_to_storage(storage_t *storage, item_t *item);
 
@@ -67,10 +91,10 @@ void remove_item_from_storage(storage_t *storage, item_t *item);
 void storage_names_to_sorted_array(storage_t *storage, char *arr_names[]);
 
 /// @brief Extract the address to the full information of the found merchandise from items
-/// @param storage | A storage containing two hash tables, one that maps names of merchandise to the address of the full information for that merchandise, and one that maps names of storage locations to the name of the merchandise stored at that location
+/// @param storage     | A storage containing two hash tables, one that maps names of merchandise to the address of the full information for that merchandise, and one that maps names of storage locations to the name of the merchandise stored at that location
 /// @param item_name   | Name of the merchandise
 /// @param found_value | Value overwritten by the address of the full information for the merchandise, can be NULL but then you MUST dereference the return value before use
-/// @returns The address to the found merchandise
+/// @returns           | The address to the found merchandise
 item_t *extract_item_from_storage(storage_t *storage, char *item_name, elem_t *found_value);
 
 void add_shelf_to_item_shelves(ioopm_list_t *item_shelves, shelf_t *shelf);
@@ -81,7 +105,7 @@ void add_shelf_to_locations(storage_t *storage, char *shelf_name, char *item_nam
 /// @param item        | The merchandise to extract information from
 /// @param id          | A unique identification number to print together with the merchandise
 /// @param print_stock | True: print the stock AND basic information of the merchandise
-///                    / False: print only the basic information of the merchandise
+///                    | False: print only the basic information of the merchandise
 void print_item(item_t item, int id, bool print_stock);
 
 #endif

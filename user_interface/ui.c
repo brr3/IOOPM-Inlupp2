@@ -92,14 +92,14 @@ static item_t *input_merch(void)
 void add_merch(storage_t *storage)
 {
   item_t *item = input_merch();
-  while (merch_exists(storage, to_upper(get_item_name(*item))))
+  while (merch_exists(storage, get_item_name(*item)))
     {
       puts("OBS! The name of merchandise you entered already exists in the database.");
       free(item->name);
       set_item_name(item, ask_question_string("Enter a different name: "));
     }
-  set_item_name(item, to_upper(get_item_name(*item)));
   add_item_to_storage(storage, item);
+  puts("Merchandise successfully added!");
 }
 
 
@@ -163,8 +163,8 @@ void remove_merch(storage_t *storage)
   int upper_bound = merch_count;
   int id = ask_question_check_nr("Enter the number id of the merchandise you would like to remove:", "OBS! A merchandise with that ID does not exist.", &lower_bound, &upper_bound);
 
-  elem_t ignored_value;
-  item_t *item = extract_item_from_storage(storage, arr_names[id - 1], &ignored_value);
+  elem_t elem_value_to_remove;
+  item_t *item = extract_item_from_storage(storage, arr_names[id - 1], &elem_value_to_remove);
   
   puts("You have selected the following merchandise:");
   print_item(*item, id, true);
@@ -177,7 +177,7 @@ void remove_merch(storage_t *storage)
         {
           remove_item_from_storage(storage, item);
           free(key);
-          free_hash_table_keys_values((elem_t) {.v = NULL}, ignored_value, NULL);
+          puts("Merchandise successfully removed!");
           return;
         }
       if (key_up == 'N')
@@ -226,26 +226,26 @@ void edit_merch(storage_t *storage)
 
       if (answer == 1)
         {
-          char *new_name = ask_question_string("Enter a new name: ");
-          while (merch_exists(storage, to_upper(new_name)))
+          char *new_name = ask_question_string("Enter a new name, or the same name: ");
+          bool same_name = strcmp(new_name, item->name) == 0;          
+          while (merch_exists(storage, new_name) && !same_name)
             {
-              puts("OBS! The name of merchandise you entered already exists in the database.");
+              puts("OBS! A merchandise with the name you entered already exists in the database.");
+              free(new_name);
               new_name = ask_question_string("Enter a different name: ");
             }
           remove_item_from_storage(storage, item);
           free(item->name);
-          set_item_name(item, to_upper(new_name));
+          set_item_name(item, new_name);
         }
       else if (answer == 2)
         {
           free(item->desc);
           set_item_desc(item, ask_question_string("Enter a new description: "));
-          add_item_to_storage(storage, item);
         }
       else if (answer == 3)
         {
           set_item_price(item, ask_question_int("Enter a new price: "));
-          add_item_to_storage(storage, item);
         }
       else
         {
@@ -313,12 +313,11 @@ void replenish_stock(storage_t *storage)
       bool location_exists = ioopm_hash_table_lookup(storage->locations, elem_shelf_name, &found_value);
       bool names_equal = strcmp(found_value.s, get_item_name(*item)) == 0;
 
-      printf("location exists : %d\nnames equal : %d\n", location_exists, names_equal);
       if (location_exists && names_equal)
         {
           int tmp = 0;
           int *index = &tmp; // Aliaseringsproblem G15
-          shelf_t *shelf = find_shelf_in_list(get_item_shelves(*item), shelf_name, index);
+          shelf_t *shelf = find_shelf_in_item_shelves(get_item_shelves(*item), shelf_name, index);
           ioopm_linked_list_remove(get_item_shelves(*item), *index);
 
           int lower_bound = 1;
@@ -335,6 +334,7 @@ void replenish_stock(storage_t *storage)
       if (location_exists && !names_equal)
         {
           puts("OBS! The storage location you entered is already occupied by another item.");
+          free(shelf_name);
           continue;
         }
       
@@ -350,7 +350,7 @@ void replenish_stock(storage_t *storage)
           add_item_to_storage(storage, item);
 
           add_shelf_to_locations(storage, get_shelf_name(*shelf), get_item_name(*item));
-        }      
+        }
       puts("Merchandise successfully replenished!");
       break;
     }

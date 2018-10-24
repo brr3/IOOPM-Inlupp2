@@ -6,7 +6,7 @@
 
 
 
-void free_hash_table_keys_values(elem_t elem_key_ignored, elem_t elem_value, void *x_ignored)
+static void free_hash_table_keys_values(elem_t elem_key_ignored, elem_t elem_value, void *x_ignored)
 {
   item_t *item = (item_t*) elem_value.v;
   free(get_item_name(*item));
@@ -33,23 +33,18 @@ void destroy_storage(storage_t *storage)
 
 
 
-int hash_string(elem_t key)
+static char *to_upper(char *str)
 {
-  char *str = key.s;
-  int result = 0;
-  do
-    {
-      result = result * 31 + *str;
-    }
-  while (*++str != '\0'); 
-  return result;
-}
-
-
-
-bool cmp_string(elem_t a, elem_t b)
-{
-  return strcmp(a.s, b.s) == 0;
+   int c = 0;  
+   while (str[c] != '\0')
+     {
+       if (str[c] >= 'a' && str[c] <= 'z')
+         {
+           str[c] = str[c] - 32;
+         }
+       c++;
+     }
+   return str;
 }
 
 
@@ -130,23 +125,40 @@ bool is_yn_key(char *key)
 
 
 
-storage_t *make_storage()
+bool merch_exists(storage_t *storage, char *merch_name)
 {
-  ioopm_hash_table_t *items = ioopm_hash_table_create_custom(hash_string, cmp_string, 17, 0.9);
-  ioopm_hash_table_t *locations = ioopm_hash_table_create_custom(hash_string, cmp_string, 17, 0.9);
-  storage_t *storage = calloc(1, sizeof(shelf_t));
-  storage->items = items;
-  storage->locations = locations;
-  return storage;
+  elem_t found_element;
+  elem_t elem_name = {.s = to_upper(merch_name)};
+  return ioopm_hash_table_lookup(storage->items, elem_name, &found_element);
 }
 
 
 
-bool merch_exists(storage_t *storage, char *name)
+static int hash_string(elem_t key)
 {
-  elem_t found_element;
-  elem_t elem_name = {.s = name};
-  return ioopm_hash_table_lookup(storage->items, elem_name, &found_element);
+  char *str = key.s;
+  int result = 0;
+  do
+    {
+      result = result * 31 + *str;
+    }
+  while (*++str != '\0'); 
+  return result;
+}
+
+static bool cmp_string(elem_t a, elem_t b)
+{
+  return strcmp(a.s, b.s) == 0;
+}
+
+storage_t *make_storage()
+{
+  ioopm_hash_table_t *items = ioopm_hash_table_create_custom(hash_string, cmp_string, 17, 0.9);
+  ioopm_hash_table_t *locations = ioopm_hash_table_create_custom(hash_string, cmp_string, 17, 0.9);
+  storage_t *storage = calloc(1, sizeof(storage_t));
+  storage->items = items;
+  storage->locations = locations;
+  return storage;
 }
 
 
@@ -165,13 +177,13 @@ item_t *make_merch(char *name, char *desc, int price)
 
 
 void remake_merch(storage_t *storage, item_t *old_item)
-{           
+{
   item_t *new_item = calloc(1, sizeof(item_t)); // Side effect
   set_item_name(new_item, get_item_name(*old_item));
   set_item_desc(new_item, get_item_desc(*old_item));
   set_item_price(new_item, get_item_price(*old_item));
   set_item_shelves(new_item, get_item_shelves(*old_item));
-
+  
   add_item_to_storage(storage, new_item); // Side effect
 
   free(old_item); // Side effect
@@ -189,13 +201,13 @@ shelf_t *make_shelf(char *shelf_name, int amount)
 
 
 
-shelf_t *find_shelf_in_list(ioopm_list_t *item_locations, char *shelf_name, int *index)
+shelf_t *find_shelf_in_item_shelves(ioopm_list_t *item_shelves, char *shelf_name, int *index)
 {
-  int shelves_count = ioopm_linked_list_size(item_locations);
+  int shelves_count = ioopm_linked_list_size(item_shelves);
   shelf_t *shelf;
   for (int i = 0; i < shelves_count; i++)
     {
-      shelf = (shelf_t*) ioopm_linked_list_get(item_locations, i).v;
+      shelf = (shelf_t*) ioopm_linked_list_get(item_shelves, i).v;
       if (strcmp(shelf->shelf_name, shelf_name) == 0)
         {
           *index = i; // Side effect
@@ -207,25 +219,9 @@ shelf_t *find_shelf_in_list(ioopm_list_t *item_locations, char *shelf_name, int 
 
 
 
-char *to_upper(char *str)
-{
-   int c = 0;  
-   while (str[c] != '\0')
-     {
-       if (str[c] >= 'a' && str[c] <= 'z')
-         {
-           str[c] = str[c] - 32;
-         }
-       c++;
-     }
-   return str;
-}
-
-
-
 void add_item_to_storage(storage_t *storage, item_t *item)
 {
-  elem_t elem_key = {.s = get_item_name(*item)};
+  elem_t elem_key = {.s = to_upper(get_item_name(*item))};
   elem_t elem_value = {.v = item};
   ioopm_hash_table_insert(storage->items, elem_key, elem_value); // Side effect
 }
@@ -238,10 +234,10 @@ void remove_item_from_storage(storage_t *storage, item_t *item)
     {
       shelf_t *shelf = (shelf_t*) ioopm_linked_list_get(get_item_shelves(*item), i).v;
       elem_t elem_key_to_remove = {.s = get_shelf_name(*shelf)};
-      ioopm_hash_table_remove_entry(storage->locations, elem_key_to_remove);
+      ioopm_hash_table_remove_entry(storage->locations, elem_key_to_remove); // Side effect
     } 
   elem_t elem_key_to_remove = {.s = get_item_name(*item)};
-  ioopm_hash_table_remove_entry(storage->items, elem_key_to_remove);
+  ioopm_hash_table_remove_entry(storage->items, elem_key_to_remove); // Side effect
 }
 
 
