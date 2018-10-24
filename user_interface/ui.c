@@ -87,12 +87,10 @@ static item_t *input_merch(void)
   return make_merch(name, desc, price);
 }
 
-
-
 void add_merch(storage_t *storage)
 {
   item_t *item = input_merch();
-  while (merch_exists(storage, get_item_name(*item)))
+  while (merch_exists(storage, get_item_name(*item))) // Aliaseringsproblem G15: item->name ändras till stora bokstäver. 
     {
       puts("OBS! The name of merchandise you entered already exists in the database.");
       free(item->name);

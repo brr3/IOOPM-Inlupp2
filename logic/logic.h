@@ -84,27 +84,43 @@ shelf_t *make_shelf(char *shelf_name, int amount);
 /// @return             | The found shelf
 shelf_t *find_shelf_in_item_shelves(ioopm_list_t *item_shelves, char *shelf_name, int *index);
 
+/// @brief         | Add item to storage
+/// @param storage | A storage containing two hash tables, one that maps names of merchandise to the address of the full information for that merchandise, and one that maps names of storage locations to the name of the merchandise stored at that location
+/// @param item    | The item to add
 void add_item_to_storage(storage_t *storage, item_t *item);
 
+/// @brief         | Remove item from storage
+/// @param storage | A storage containing two hash tables, one that maps names of merchandise to the address of the full information for that merchandise, and one that maps names of storage locations to the name of the merchandise stored at that location
+/// @param item    | The item to remove
 void remove_item_from_storage(storage_t *storage, item_t *item);
 
+/// @brief           | Sort all merchandise names into an array
+/// @param storage   | A storage containing two hash tables, one that maps names of merchandise to the address of the full information for that merchandise, and one that maps names of storage locations to the name of the merchandise stored at that location
+/// @param arr_names | The array to add all merchandise names to, should fit the total amount of merchandise in storage
 void storage_names_to_sorted_array(storage_t *storage, char *arr_names[]);
 
 /// @brief Extract the address to the full information of the found merchandise from items
 /// @param storage     | A storage containing two hash tables, one that maps names of merchandise to the address of the full information for that merchandise, and one that maps names of storage locations to the name of the merchandise stored at that location
-/// @param item_name   | Name of the merchandise
-/// @param found_value | Value overwritten by the address of the full information for the merchandise, can be NULL but then you MUST dereference the return value before use
+/// @param item_name   | Name of the merchandise to retrieve
+/// @param found_value | Value overwritten by the address of the full information for the merchandise, can be NULL but then you must >>dereference the return value before use<<
 /// @returns           | The address to the found merchandise
 item_t *extract_item_from_storage(storage_t *storage, char *item_name, elem_t *found_value);
 
+/// @brief              | Add shelf to the list of shelves for a particular merchandise
+/// @param item_shelves | A linked list where each element is a pointer to a shelf
+/// @param shelf        | Shelf to add
 void add_shelf_to_item_shelves(ioopm_list_t *item_shelves, shelf_t *shelf);
 
+/// @brief              | Insert the name of a merchandise into the second hash table mentioned below
+/// @param storage      | A storage containing two hash tables, one that maps names of merchandise to the address of the full information for that merchandise, and one that maps names of storage locations to the name of the merchandise stored at that location
+/// @param shelf_name   | Name of shelf to use as key
+/// @param item_name    | Name of the merchandise to be inserted into the hash table 
 void add_shelf_to_locations(storage_t *storage, char *shelf_name, char *item_name);
 
 /// @brief Extract all information from a merchandise and print it to screen
 /// @param item        | The merchandise to extract information from
 /// @param id          | A unique identification number to print together with the merchandise
-/// @param print_stock | True: print the stock AND basic information of the merchandise
+/// @param print_stock | True: print the stock >>and<< basic information of the merchandise
 ///                    | False: print only the basic information of the merchandise
 void print_item(item_t item, int id, bool print_stock);
 
