@@ -89,6 +89,12 @@ static item_t *input_merch(void)
 
 void add_merch(storage_t *storage)
 {
+  if (storage == NULL)
+    {
+      puts("OBS! Storage not initialised.");
+      return;
+    }
+  
   item_t *item = input_merch();
   while (merch_exists(storage, get_item_name(*item))) // Aliaseringsproblem G15: item->name ändras till stora bokstäver. 
     {
@@ -104,6 +110,12 @@ void add_merch(storage_t *storage)
 
 void list_merch(storage_t *storage, bool print_stock)
 {
+  if (storage == NULL)
+    {
+      puts("OBS! Storage not initialised.");
+      return;
+    }
+  
   int merch_count = ioopm_hash_table_size(storage->items);
   if (merch_count == 0)
     {
@@ -146,6 +158,12 @@ void list_merch(storage_t *storage, bool print_stock)
 
 void remove_merch(storage_t *storage)
 {
+  if (storage == NULL)
+    {
+      puts("OBS! Storage not initialised.");
+      return;
+    }
+  
   int merch_count = ioopm_hash_table_size(storage->items);
   if (merch_count == 0)
     {
@@ -191,6 +209,12 @@ void remove_merch(storage_t *storage)
 
 void edit_merch(storage_t *storage)
 {
+  if (storage == NULL)
+    {
+      puts("OBS! Storage not initialised.");
+      return;
+    }
+  
   int merch_count = ioopm_hash_table_size(storage->items);
   if (merch_count == 0)
     {
@@ -257,6 +281,12 @@ void edit_merch(storage_t *storage)
 
 void show_stock(storage_t *storage)
 {
+  if (storage == NULL)
+    {
+      puts("OBS! Storage not initialised.");
+      return;
+    }
+  
   int merch_count = ioopm_hash_table_size(storage->items);
   if (merch_count == 0)
     {
@@ -280,8 +310,13 @@ void show_stock(storage_t *storage)
 
 void replenish_stock(storage_t *storage)
 {
-  ioopm_hash_table_t *items = storage->items;
-  int merch_count = ioopm_hash_table_size(items);
+  if (storage == NULL)
+    {
+      puts("OBS! Storage not initialised.");
+      return;
+    }
+  
+  int merch_count = ioopm_hash_table_size(storage->items);
   if (merch_count == 0)
     {
       puts("OBS! No merchandise has been added to the warehouse yet.");
