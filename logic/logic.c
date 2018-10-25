@@ -125,10 +125,10 @@ bool is_yn_key(char *key)
 
 
 
-bool merch_exists(storage_t *storage, char *merch_name)
+bool item_exists(storage_t *storage, char *item_name)
 {
   elem_t found_element;
-  elem_t elem_name = {.s = to_upper(merch_name)};
+  elem_t elem_name = {.s = to_upper(item_name)};
   return ioopm_hash_table_lookup(storage->items, elem_name, &found_element);
 }
 
@@ -163,7 +163,7 @@ storage_t *make_storage()
 
 
 
-item_t *make_merch(char *name, char *desc, int price) 
+item_t *make_item(char *name, char *desc, int price) 
 {
   item_t *item = calloc(1, sizeof(item_t));
   set_item_name(item, name);
@@ -176,17 +176,17 @@ item_t *make_merch(char *name, char *desc, int price)
 
 
 
-void remake_merch(storage_t *storage, item_t *old_item)
+void remake_item(storage_t *storage, item_t *item)
 {
   item_t *new_item = calloc(1, sizeof(item_t)); // Side effect
-  set_item_name(new_item, get_item_name(*old_item));
-  set_item_desc(new_item, get_item_desc(*old_item));
-  set_item_price(new_item, get_item_price(*old_item));
-  set_item_shelves(new_item, get_item_shelves(*old_item));
+  set_item_name(new_item, get_item_name(*item));
+  set_item_desc(new_item, get_item_desc(*item));
+  set_item_price(new_item, get_item_price(*item));
+  set_item_shelves(new_item, get_item_shelves(*item));
   
   add_item_to_storage(storage, new_item); // Side effect
 
-  free(old_item); // Side effect
+  free(item); // Side effect
 }
 
 
@@ -254,14 +254,14 @@ static void sort_keys(char *keys[], size_t no_keys)
 
 void storage_names_to_sorted_array(storage_t *storage, char *arr_names[])
 {
-  int merch_count = ioopm_hash_table_size(storage->items);
-  ioopm_list_t *merch_names = ioopm_hash_table_keys(storage->items);
-  for (int i = 0; i < merch_count; i++)
+  int item_count = ioopm_hash_table_size(storage->items);
+  ioopm_list_t *item_names = ioopm_hash_table_keys(storage->items);
+  for (int i = 0; i < item_count; i++)
     {
-      arr_names[i] = ioopm_linked_list_remove(merch_names, i).s; // Side effect
+      arr_names[i] = ioopm_linked_list_remove(item_names, i).s; // Side effect
     }
-  sort_keys(arr_names, merch_count); // Side effect
-  ioopm_linked_list_destroy(merch_names); // Side effect
+  sort_keys(arr_names, item_count); // Side effect
+  ioopm_linked_list_destroy(item_names); // Side effect
 }
 
 
@@ -276,7 +276,7 @@ item_t *extract_item_from_storage(storage_t *storage, char *item_name, elem_t *f
       item_t *item = (item_t*) found_value.v;
       if (item == NULL)
         {
-          assert(false); // Defensiv programmering I22
+          assert(false); 
         }
       return item;
     }
@@ -287,7 +287,7 @@ item_t *extract_item_from_storage(storage_t *storage, char *item_name, elem_t *f
       item_t *item = (item_t*) found_value->v;
       if (item == NULL)
         {
-          assert(false); // Defensiv programmering I22
+          assert(false); 
         }
       return item;
     }

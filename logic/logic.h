@@ -53,7 +53,7 @@ bool is_yn_key(char *key);
 /// @param storage    | A storage containing two hash tables, one that maps names of merchandise to the address of the full information for that merchandise, and one that maps names of storage locations to the name of the merchandise stored at that location
 /// @param merch_name | The name of the merchandise to check
 /// @return           | True if merchandise exists in storage, else false
-bool merch_exists(storage_t *storage, char *merch_name);
+bool item_exists(storage_t *storage, char *item_name);
 
 /// @brief  | Initialise the storage. Must be run before program starts.
 /// @return | The initialised storage
@@ -64,12 +64,12 @@ storage_t *make_storage();
 /// @param desc  | Description of the merchandise
 /// @param price | Price of the merchandise
 /// @return      | A newly created merchandise
-item_t *make_merch(char *name, char *desc, int price);
+item_t *make_item(char *name, char *desc, int price);
 
 /// @brief         | Transfer details of an existing merchandise to a newly allocated merchandise and add it to storage. Must be run after removing an existing merchandise from storage in conjunction with changing the name of that merchandise.
 /// @param storage | A storage containing two hash tables, one that maps names of merchandise to the address of the full information for that merchandise, and one that maps names of storage locations to the name of the merchandise stored at that location
 /// @param item    | The merchandise to transfer details from 
-void remake_merch(storage_t *storage, item_t *item);
+void remake_item(storage_t *storage, item_t *item);
 
 /// @brief        | Create a shelf with the given parameters
 /// @param name   | Name of the shelf

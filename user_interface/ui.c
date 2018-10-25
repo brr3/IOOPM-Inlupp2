@@ -79,15 +79,15 @@ static int ask_question_check_nr(char *question, char *error_msg, int *lower_bou
 
 
 
-static item_t *input_merch(void) 
+static item_t *input_item(void) 
 {
   char *name = ask_question_string("Enter a name: ");
   char *desc = ask_question_string("Enter a description: ");
   int price = ask_question_int("Enter a price: ");
-  return make_merch(name, desc, price);
+  return make_item(name, desc, price);
 }
 
-void add_merch(storage_t *storage)
+void add_item(storage_t *storage)
 {
   if (storage == NULL)
     {
@@ -95,8 +95,8 @@ void add_merch(storage_t *storage)
       return;
     }
   
-  item_t *item = input_merch();
-  while (merch_exists(storage, get_item_name(*item))) // Aliaseringsproblem G15: item->name ändras till stora bokstäver. 
+  item_t *item = input_item();
+  while (item_exists(storage, get_item_name(*item))) 
     {
       puts("OBS! The name of merchandise you entered already exists in the database.");
       free(item->name);
@@ -108,7 +108,7 @@ void add_merch(storage_t *storage)
 
 
 
-void list_merch(storage_t *storage, bool print_stock)
+void list_item(storage_t *storage, bool print_stock)
 {
   if (storage == NULL)
     {
@@ -116,24 +116,24 @@ void list_merch(storage_t *storage, bool print_stock)
       return;
     }
   
-  int merch_count = ioopm_hash_table_size(storage->items);
-  if (merch_count == 0)
+  int item_count = ioopm_hash_table_size(storage->items);
+  if (item_count == 0)
     {
       puts("OBS! No merchandise has been added to the warehouse yet.");
       return;
     }
   
-  char *arr_names[merch_count];
+  char *arr_names[item_count];
   storage_names_to_sorted_array(storage, arr_names);
   
   int continues = 1;
-  for (int i = 0; i < merch_count; i++)
+  for (int i = 0; i < item_count; i++)
     {
       item_t item = *extract_item_from_storage(storage, arr_names[i], NULL);      
 
       print_item(item, i + 1, print_stock);
 
-      bool twenty_listings = i == continues * 20 - 1 && merch_count > continues * 20;
+      bool twenty_listings = i == continues * 20 - 1 && item_count > continues * 20;
       while (twenty_listings)
         {
           char *key = ask_question_yes_no(("Continue listing? (y/n)"));
@@ -156,7 +156,7 @@ void list_merch(storage_t *storage, bool print_stock)
 
 
 
-void remove_merch(storage_t *storage)
+void remove_item(storage_t *storage)
 {
   if (storage == NULL)
     {
@@ -164,19 +164,19 @@ void remove_merch(storage_t *storage)
       return;
     }
   
-  int merch_count = ioopm_hash_table_size(storage->items);
-  if (merch_count == 0)
+  int item_count = ioopm_hash_table_size(storage->items);
+  if (item_count == 0)
     {
       puts("OBS! No merchandise has been added to the warehouse yet.");
       return;
     }
-  list_merch(storage, false);
+  list_item(storage, false);
   
-  char *arr_names[merch_count];
+  char *arr_names[item_count];
   storage_names_to_sorted_array(storage, arr_names);
 
   int lower_bound = 1;
-  int upper_bound = merch_count;
+  int upper_bound = item_count;
   int id = ask_question_check_nr("Enter the number id of the merchandise you would like to remove:", "OBS! A merchandise with that ID does not exist.", &lower_bound, &upper_bound);
 
   elem_t elem_value_to_remove;
@@ -207,7 +207,7 @@ void remove_merch(storage_t *storage)
 
 
 
-void edit_merch(storage_t *storage)
+void edit_item(storage_t *storage)
 {
   if (storage == NULL)
     {
@@ -215,19 +215,19 @@ void edit_merch(storage_t *storage)
       return;
     }
   
-  int merch_count = ioopm_hash_table_size(storage->items);
-  if (merch_count == 0)
+  int item_count = ioopm_hash_table_size(storage->items);
+  if (item_count == 0)
     {
       puts("OBS! No merchandise has been added to the warehouse yet.");
       return;
     }
-  list_merch(storage, false);
+  list_item(storage, false);
   
-  char *arr_names[merch_count];
+  char *arr_names[item_count];
   storage_names_to_sorted_array(storage, arr_names);
 
   int lower_bound = 1;
-  int upper_bound = merch_count;
+  int upper_bound = item_count;
   int id = ask_question_check_nr("Enter the number id of the merchandise you would like to edit:", "OBS! A merchandise with that ID does not exist.", &lower_bound, &upper_bound); 
 
   elem_t ignored_value;
@@ -250,7 +250,7 @@ void edit_merch(storage_t *storage)
         {
           char *new_name = ask_question_string("Enter a new name, or the same name: ");
           bool same_name = strcmp(new_name, item->name) == 0;          
-          while (merch_exists(storage, new_name) && !same_name)
+          while (item_exists(storage, new_name) && !same_name)
             {
               puts("OBS! A merchandise with the name you entered already exists in the database.");
               free(new_name);
@@ -271,7 +271,7 @@ void edit_merch(storage_t *storage)
         }
       else
         {
-          remake_merch(storage, item);
+          remake_item(storage, item);
           break;
         }
     }
@@ -279,7 +279,7 @@ void edit_merch(storage_t *storage)
 
 
 
-void show_stock(storage_t *storage)
+void show_item_stock(storage_t *storage)
 {
   if (storage == NULL)
     {
@@ -287,19 +287,19 @@ void show_stock(storage_t *storage)
       return;
     }
   
-  int merch_count = ioopm_hash_table_size(storage->items);
-  if (merch_count == 0)
+  int item_count = ioopm_hash_table_size(storage->items);
+  if (item_count == 0)
     {
       puts("OBS! No merchandise has been added to the warehouse yet.");
       return;
     }
-  list_merch(storage, false);
+  list_item(storage, false);
   
-  char *arr_names[merch_count];
+  char *arr_names[item_count];
   storage_names_to_sorted_array(storage, arr_names);
 
   int lower_bound = 1;
-  int upper_bound = merch_count;
+  int upper_bound = item_count;
   int id = ask_question_check_nr("Enter the number id of the merchandise you would like to show the stock from:", "OBS! A merchandise with that ID does not exist.", &lower_bound, &upper_bound);
 
   item_t item = *extract_item_from_storage(storage, arr_names[id - 1], NULL);
@@ -308,7 +308,7 @@ void show_stock(storage_t *storage)
 
 
 
-void replenish_stock(storage_t *storage)
+void replenish_item_stock(storage_t *storage)
 {
   if (storage == NULL)
     {
@@ -316,19 +316,19 @@ void replenish_stock(storage_t *storage)
       return;
     }
   
-  int merch_count = ioopm_hash_table_size(storage->items);
-  if (merch_count == 0)
+  int item_count = ioopm_hash_table_size(storage->items);
+  if (item_count == 0)
     {
       puts("OBS! No merchandise has been added to the warehouse yet.");
       return;
     }
-  list_merch(storage, true);
+  list_item(storage, true);
   
-  char *arr_names[merch_count];
+  char *arr_names[item_count];
   storage_names_to_sorted_array(storage, arr_names);
 
   int lower_bound = 1;
-  int upper_bound = merch_count;
+  int upper_bound = item_count;
   int id = ask_question_check_nr("Enter the number id of the merchandise you would like to replenish the stock of:", "OBS! A merchandise with that ID does not exist.", &lower_bound, &upper_bound);
 
   elem_t found_value;
@@ -349,7 +349,7 @@ void replenish_stock(storage_t *storage)
       if (location_exists && names_equal)
         {
           int tmp = 0;
-          int *index = &tmp; // Aliaseringsproblem G15
+          int *index = &tmp; 
           shelf_t *shelf = find_shelf_in_item_shelves(get_item_shelves(*item), shelf_name, index);
           ioopm_linked_list_remove(get_item_shelves(*item), *index);
 
@@ -414,27 +414,27 @@ Chec[k]out\n\
       puts("------------------------");
       if (key_up == 'A')
         {
-          add_merch(storage);
+          add_item(storage);
         }
       if (key_up == 'L')
         {
-          list_merch(storage, false);
+          list_item(storage, false);
         }
       if (key_up == 'R')
         {
-          remove_merch(storage);
+          remove_item(storage);
         }
       if (key_up == 'E')
         {
-          edit_merch(storage);
+          edit_item(storage);
         }
       if (key_up == 'S')
         {
-          show_stock(storage);
+          show_item_stock(storage);
         }
       if (key_up == 'P')
         {
-          replenish_stock(storage);
+          replenish_item_stock(storage);
         }
       if (key_up == 'C')
         {
