@@ -7,6 +7,7 @@ main: elem.o logic.o ui.o main.c
 
 tests: elem.o logic.o ui.o tests.c
 	$(COMPILER) $(OPTIONS) -o tests elem.o logic.o ui.o hash_table.o linked_list.o utils.o tests.c $(LINKOPTIONS)
+	./tests
 
 elem.o: logic/elem.c logic/elem.h
 	$(COMPILER) $(OPTIONS) -c logic/elem.c $(LINKOPTIONS)
@@ -27,7 +28,7 @@ memtest_loop: main
 	valgrind --leak-check=full ./main
 
 clean:
-	rm *.o tests
+	rm *.o tests main
 
 gitadd:
 	git add logic/*.c logic/*.h user_interface/*.c user_interface/*.h *.c *.h *.md Makefile 

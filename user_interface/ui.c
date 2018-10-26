@@ -232,6 +232,8 @@ void edit_item(storage_t *storage)
 
   elem_t ignored_value;
   item_t *item = extract_item_from_storage(storage, arr_names[id - 1], &ignored_value);
+  bool item_name_modified = false;
+  bool anything_modified = false;
 
   while (true)
     {    
@@ -259,20 +261,38 @@ void edit_item(storage_t *storage)
           remove_item_from_storage(storage, item);
           free(item->name);
           set_item_name(item, new_name);
+          item_name_modified = true;
+          anything_modified = true;
         }
       else if (answer == 2)
         {
           free(item->desc);
           set_item_desc(item, ask_question_string("Enter a new description: "));
+          anything_modified = true;
         }
       else if (answer == 3)
         {
           set_item_price(item, ask_question_int("Enter a new price: "));
+          anything_modified = true;
         }
       else
         {
-          remake_item(storage, item);
-          break;
+          if (anything_modified)
+            {
+              if (item_name_modified)
+                {
+                  remake_item(storage, item);
+                }
+              else
+                {
+                  add_item_to_storage(storage, item);
+                }
+              break;
+            }
+          else
+            {
+              break;
+            }
         }
     }
 }
