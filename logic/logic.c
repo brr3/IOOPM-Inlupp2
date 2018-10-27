@@ -6,9 +6,15 @@
 
 
 
+//
+// MEMORY MANAGEMENT
+//
+
+
+
 static void free_hash_table_keys_values(elem_t elem_key_ignored, elem_t elem_value, void *x_ignored)
 {
-  item_t *item = (item_t*) elem_value.v;
+  item_t *item = elem_value.v;
   free(get_item_name(*item));
   free(get_item_desc(*item));
   ioopm_list_t *item_shelves = get_item_shelves(*item);
@@ -23,29 +29,35 @@ static void free_hash_table_keys_values(elem_t elem_key_ignored, elem_t elem_val
   free(elem_value.v);
 }
 
+static void free_cart_contents(elem_t elem_value, void *x_ignored)
+{
+  cart_t *cart = elem_value.v;
+  ioopm_list_t *cart_items = cart->cart_items;
+  int cart_item_count = ioopm_linked_list_size(cart_items);
+  for (int i = 0; i < cart_item_count; i++)
+    {
+      cart_item_t *cart_item = ioopm_linked_list_get(cart_items, i).v;
+      free(cart_item);
+    }
+  ioopm_linked_list_destroy(cart_items);
+  free(elem_value.v);
+}
+
 void destroy_storage(storage_t *storage)
 {
   ioopm_hash_table_apply_to_all(storage->items, free_hash_table_keys_values, NULL);          
   ioopm_hash_table_destroy(storage->items);
   ioopm_hash_table_destroy(storage->locations);
+  ioopm_linked_apply_to_all(storage->carts, free_cart_contents, NULL);
+  ioopm_linked_list_destroy(storage->carts);
   free(storage);
 }
 
 
 
-static char *to_upper(char *str)
-{
-   int c = 0;  
-   while (str[c] != '\0')
-     {
-       if (str[c] >= 'a' && str[c] <= 'z')
-         {
-           str[c] = str[c] - 32;
-         }
-       c++;
-     }
-   return str;
-}
+//
+// MENU LOGIC
+//
 
 
 
@@ -125,12 +137,9 @@ bool is_yn_key(char *key)
 
 
 
-bool item_exists(storage_t *storage, char *item_name)
-{
-  elem_t found_element;
-  elem_t elem_name = {.s = to_upper(item_name)};
-  return ioopm_hash_table_lookup(storage->items, elem_name, &found_element);
-}
+//
+// STORAGE LOGIC
+//
 
 
 
@@ -155,11 +164,20 @@ storage_t *make_storage()
 {
   ioopm_hash_table_t *items = ioopm_hash_table_create_custom(hash_string, cmp_string, 17, 0.9);
   ioopm_hash_table_t *locations = ioopm_hash_table_create_custom(hash_string, cmp_string, 17, 0.9);
+  ioopm_list_t *carts = ioopm_linked_list_create();
   storage_t *storage = calloc(1, sizeof(storage_t));
   storage->items = items;
   storage->locations = locations;
+  storage->carts = carts;
+  storage->cart_id = 0;
   return storage;
 }
+
+
+
+//
+// ITEM LOGIC
+//
 
 
 
@@ -176,6 +194,31 @@ item_t *make_item(char *name, char *desc, int price)
 
 
 
+static char *to_upper(char *str)
+{
+   int c = 0;  
+   while (str[c] != '\0')
+     {
+       if (str[c] >= 'a' && str[c] <= 'z')
+         {
+           str[c] = str[c] - 32;
+         }
+       c++;
+     }
+   return str;
+}
+
+
+
+bool item_exists(storage_t *storage, char *item_name)
+{
+  elem_t found_element;
+  elem_t elem_name = {.s = to_upper(item_name)};
+  return ioopm_hash_table_lookup(storage->items, elem_name, &found_element);
+}
+
+
+
 void remake_item(storage_t *storage, item_t *item)
 {
   item_t *new_item = calloc(1, sizeof(item_t)); // Side effect
@@ -187,34 +230,6 @@ void remake_item(storage_t *storage, item_t *item)
   add_item_to_storage(storage, new_item); // Side effect
 
   free(item); // Side effect
-}
-
-
-
-shelf_t *make_shelf(char *shelf_name, int amount)
-{
-  shelf_t *shelf = calloc(1, sizeof(shelf_t));
-  shelf->shelf_name = shelf_name;
-  shelf->amount = amount;
-  return shelf;
-}
-
-
-
-shelf_t *find_shelf_in_item_shelves(ioopm_list_t *item_shelves, char *shelf_name, int *index)
-{
-  int shelves_count = ioopm_linked_list_size(item_shelves);
-  shelf_t *shelf;
-  for (int i = 0; i < shelves_count; i++)
-    {
-      shelf = (shelf_t*) ioopm_linked_list_get(item_shelves, i).v;
-      if (strcmp(shelf->shelf_name, shelf_name) == 0)
-        {
-          *index = i; // Side effect
-          break;
-        }
-    }
-  return shelf;
 }
 
 
@@ -295,6 +310,22 @@ item_t *extract_item_from_storage(storage_t *storage, char *item_name, elem_t *f
 
 
 
+//
+// SHELF LOGIC
+//
+
+
+
+shelf_t *make_shelf(char *shelf_name, int amount)
+{
+  shelf_t *shelf = calloc(1, sizeof(shelf_t));
+  shelf->shelf_name = shelf_name;
+  shelf->amount = amount;
+  return shelf;
+}
+
+
+
 void add_shelf_to_item_shelves(ioopm_list_t *item_shelves, shelf_t *shelf)
 {
   elem_t elem_shelf = {.v = shelf};          
@@ -309,6 +340,164 @@ void add_shelf_to_locations(storage_t *storage, char *shelf_name, char *item_nam
   elem_t elem_value = {.s = item_name};
   ioopm_hash_table_insert(storage->locations, elem_key, elem_value); // Side effect
 }
+
+
+
+shelf_t *find_shelf_in_item_shelves(ioopm_list_t *item_shelves, char *shelf_name, int *index)
+{
+  int shelves_count = ioopm_linked_list_size(item_shelves);
+  shelf_t *shelf;
+  for (int i = 0; i < shelves_count; i++)
+    {
+      shelf = (shelf_t*) ioopm_linked_list_get(item_shelves, i).v;
+      if (strcmp(shelf->shelf_name, shelf_name) == 0)
+        {
+          *index = i; // Side effect
+          break;
+        }
+    }
+  return shelf;
+}
+
+
+
+//
+// CART LOGIC
+//
+
+
+
+static cart_t *make_cart(int id)
+{
+  cart_t *cart = calloc(1, sizeof(cart_t));
+  cart->id = id;
+  ioopm_list_t *cart_items = ioopm_linked_list_create();
+  cart->cart_items = cart_items;
+  return cart;
+}
+
+
+
+static int cart_id_to_index(storage_t *storage, int id)
+{
+  int carts_in_storage = ioopm_linked_list_size(storage->carts);
+  for (int i = 0; i < carts_in_storage; i++)
+    {
+      cart_t *cart = ioopm_linked_list_get(storage->carts, i).v;
+      if (cart->id == id)
+        {
+          return i;
+        }
+    }
+  return -1;
+}
+
+
+
+bool cart_exists(storage_t *storage, int cart_id)
+{
+  int valid_index = cart_id_to_index(storage, cart_id);
+  return valid_index != -1;
+}
+
+
+
+void add_cart_to_storage(storage_t *storage)
+{
+  cart_t *cart = make_cart(++storage->cart_id);
+  elem_t elem_cart = {.v = cart};
+  ioopm_linked_list_append(storage->carts, elem_cart);
+}
+
+
+
+void remove_cart_from_storage(storage_t *storage, int cart_id)
+{
+  int valid_index = cart_id_to_index(storage, cart_id);
+  cart_t *cart = ioopm_linked_list_get(storage->carts, valid_index).v;
+  if (valid_index >= 0)
+    {
+      ioopm_linked_list_remove(storage->carts, valid_index);
+    }
+  elem_t elem_cart_to_remove = {.v = cart};
+  free_cart_contents(elem_cart_to_remove, NULL);
+}
+
+
+
+cart_t *extract_cart_from_storage(storage_t *storage, int cart_id)
+{
+  int valid_index = cart_id_to_index(storage, cart_id);
+  if (valid_index >= 0)
+    {
+      cart_t *cart = ioopm_linked_list_get(storage->carts, valid_index).v;
+      return cart;
+    }
+  else
+    {
+      return NULL;
+    }
+}
+
+
+
+static cart_item_t *make_cart_item(char *name, int amount)
+{
+  cart_item_t *cart_item = calloc(1, sizeof(cart_item_t));
+  cart_item->name = name;
+  cart_item->amount = amount;
+  return cart_item;
+}
+
+static bool cart_item_exists(cart_t cart, char *item_name)
+{
+  ioopm_list_t *cart_items = cart.cart_items;
+  int cart_items_count = ioopm_linked_list_size(cart_items);
+  for (int i = 0; i < cart_items_count; i++)
+    {
+      cart_item_t *cart_item = ioopm_linked_list_get(cart_items, i).v;
+      if (strcmp(cart_item->name, item_name) == 0)
+        {
+          return true;
+        }
+    }
+  return false;
+}
+
+void add_cart_item_to_cart(storage_t *storage, item_t item, int amount, int cart_id)
+{
+  cart_t *cart = extract_cart_from_storage(storage, cart_id);
+  if (cart != NULL)
+    {
+      if (cart_item_exists(*cart, get_item_name(item)))
+        {
+          int valid_index = cart_id_to_index(storage, cart_id);
+          cart_item_t *cart_item = ioopm_linked_list_get(cart->cart_items, valid_index).v;
+          if (cart_item->amount + amount <= get_item_total_amount(item))
+            {
+              cart_item->amount += amount;
+              puts("Item successfully added to shopping cart!");
+            }
+          else
+            {
+              puts("OBS! Amount of selected item in shopping cart exceeds stock. Operation cancelled.");
+            }
+        }
+      else
+        {         
+          cart_item_t *cart_item = make_cart_item(get_item_name(item), amount);
+          elem_t elem_cart_item = {.v = cart_item};
+          ioopm_linked_list_append(cart->cart_items, elem_cart_item);
+          puts("Item sucessfully added to shopping cart!");
+        }
+    }
+}
+
+
+
+//
+// PRINT FUNCTIONS
+//
 
 
 
@@ -366,5 +555,41 @@ void print_item(item_t item, int id, bool print_stock)
       printf("Name: %s\nDesc: %s\nPrice: %d.%d\n", name, desc, kr, ore); // List merchandise
       puts("------------------------");
       return;
+    }
+}
+
+
+
+void print_cart(cart_t cart)
+{
+  int id = cart.id;
+  ioopm_list_t *cart_items = cart.cart_items;
+
+  int items_in_cart = ioopm_linked_list_size(cart_items);
+
+  if (items_in_cart == 0)
+    {
+      printf("--------[ # %d ]--------\n", id);
+      puts("Cart empty!");
+      puts("------------------------");
+    }
+
+  if (items_in_cart == 1)
+    {
+      cart_item_t cart_item = *(cart_item_t*) ioopm_linked_list_get(cart_items, 0).v;
+      printf("--------[ # %d ]--------\n", id);
+      printf("1. Merchandise: %s\tAmount: %d\n", cart_item.name, cart_item.amount);
+      puts("------------------------");
+    }
+
+  if (items_in_cart > 1)
+    {
+      printf("--------[ # %d ]--------\n", id);
+      for (int i = 0; i < items_in_cart; i++)
+        {
+          cart_item_t cart_item = *(cart_item_t*) ioopm_linked_list_get(cart_items, i).v;
+          printf("%d. Merchandise: %s\tAmount: %d\n", i + 1, cart_item.name, cart_item.amount);
+        }
+      puts("------------------------");
     }
 }

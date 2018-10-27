@@ -108,7 +108,7 @@ void add_item(storage_t *storage)
 
 
 
-void list_item(storage_t *storage, bool print_stock)
+void list_items(storage_t *storage, bool print_stock)
 {
   if (storage == NULL)
     {
@@ -170,7 +170,7 @@ void remove_item(storage_t *storage)
       puts("OBS! No merchandise has been added to the warehouse yet.");
       return;
     }
-  list_item(storage, false);
+  list_items(storage, false);
   
   char *arr_names[item_count];
   storage_names_to_sorted_array(storage, arr_names);
@@ -221,7 +221,7 @@ void edit_item(storage_t *storage)
       puts("OBS! No merchandise has been added to the warehouse yet.");
       return;
     }
-  list_item(storage, false);
+  list_items(storage, false);
   
   char *arr_names[item_count];
   storage_names_to_sorted_array(storage, arr_names);
@@ -313,7 +313,7 @@ void show_item_stock(storage_t *storage)
       puts("OBS! No merchandise has been added to the warehouse yet.");
       return;
     }
-  list_item(storage, false);
+  list_items(storage, false);
   
   char *arr_names[item_count];
   storage_names_to_sorted_array(storage, arr_names);
@@ -342,7 +342,7 @@ void replenish_item_stock(storage_t *storage)
       puts("OBS! No merchandise has been added to the warehouse yet.");
       return;
     }
-  list_item(storage, true);
+  list_items(storage, true);
   
   char *arr_names[item_count];
   storage_names_to_sorted_array(storage, arr_names);
@@ -411,6 +411,187 @@ void replenish_item_stock(storage_t *storage)
 
 
 
+static void list_carts(storage_t *storage)
+{
+  if (storage == NULL)
+    {
+      puts("OBS! Storage not initialised.");
+      return;
+    }
+  
+  int carts_in_storage = ioopm_linked_list_size(storage->carts);
+  if (carts_in_storage == 0)
+    {
+      puts("OBS! No carts have been added to the warehouse yet.");
+      return;
+    }
+  
+  int continues = 1;
+  for (int i = 0; i < carts_in_storage; i++)
+    {
+      cart_t cart = *(cart_t*) ioopm_linked_list_get(storage->carts, i).v;
+
+      print_cart(cart);
+
+      bool twenty_listings = i == continues * 20 - 1 && carts_in_storage > continues * 20;
+      while (twenty_listings)
+        {
+          char *key = ask_question_yes_no(("Continue listing? (y/n)"));
+          char key_up = toupper(*key);
+          if (key_up == 'Y') 
+            {
+              continues++;
+              free(key);
+              break;
+            }
+          if (key_up == 'N')
+            {
+              free(key);
+              return;
+            }
+          free(key);
+        }
+    }
+}
+
+
+
+void create_cart(storage_t *storage)
+{
+  if (storage == NULL)
+    {
+      puts("OBS! Storage not initialised.");
+      return;
+    }
+    
+  add_cart_to_storage(storage);
+  puts("Cart successfully added!");
+}
+
+
+
+void remove_cart(storage_t *storage)
+{
+  if (storage == NULL)
+    {
+      puts("OBS! Storage not initialised.");
+      return;
+    }    
+  int carts_in_storage = ioopm_linked_list_size(storage->carts);
+  if (carts_in_storage == 0)
+    {
+      puts("OBS! No carts have been added to the warehouse yet.");
+      return;
+    }
+  list_carts(storage);
+
+  int cart_id = 0;
+  while (true)
+    {
+      cart_id = ask_question_int("Enter the number id of the cart you would like to remove:");
+      if (cart_exists(storage, cart_id))
+        {
+          break;
+        }
+      else
+        {
+          puts("OBS! Cart ID does not exist.");
+        }
+    }
+
+  cart_t cart = *extract_cart_from_storage(storage, cart_id);
+  while (true)
+    {
+      print_cart(cart);
+      
+      char *key = ask_question_yes_no(("Are you sure you want to remove the selected shopping cart? (y/n)"));
+      char key_up = toupper(*key);
+      if (key_up == 'Y')
+        {
+          remove_cart_from_storage(storage, cart_id);
+          puts("Cart successfully removed!");
+          free(key);
+          break;
+        }
+      if (key_up == 'N')
+        {
+          free(key);
+          return;
+        }
+      free(key);
+    }
+}
+
+
+
+void add_to_cart(storage_t *storage)
+{
+  int item_count = ioopm_hash_table_size(storage->items);
+  if (item_count == 0)
+    {
+      puts("OBS! No merchandise has been added to the warehouse yet.");
+      return;
+    }
+  int carts_in_storage = ioopm_linked_list_size(storage->carts);
+  if (carts_in_storage == 0)
+    {
+      puts("OBS! No carts have been added to the warehouse yet.");
+      return;
+    }  
+  list_items(storage, false);
+
+  char *arr_names[item_count];
+  storage_names_to_sorted_array(storage, arr_names);
+  
+  int lower_bound = 1;
+  int upper_bound = item_count;
+  int item_id = ask_question_check_nr("Enter the number id of the item you would like to add:", "OBS! An item with that ID does not exist.", &lower_bound, &upper_bound);
+
+  elem_t found_value;
+  item_t *item = extract_item_from_storage(storage, arr_names[item_id - 1], &found_value);
+
+  puts("You have selected the following item:");
+  print_item(*item, item_id, false);
+
+  lower_bound = 0;
+  upper_bound = get_item_total_amount(*item);
+
+  if (upper_bound == 0)
+    {
+      puts("OBS! The selected item is not in stock.");
+      return;
+    }
+  
+  printf("Current stock of %s is %d\n", item->name, upper_bound);
+  int amount = ask_question_check_nr("Enter a quantity, or 0 to cancel:", "OBS! You either entered a negative value, or a value greater than the current stock of the item.", &lower_bound, &upper_bound);
+
+  if (amount == 0)
+    {
+      puts("Operation cancelled by user.");
+      return;
+    }
+  
+  while (true)
+    {
+      list_carts(storage);
+      print_item(*item, item_id, false);
+      
+      int cart_id = ask_question_int("Enter the number id of the cart you would like to add above item to:");
+      
+      if (cart_exists(storage, cart_id))
+        {
+          add_cart_item_to_cart(storage, *item, amount, cart_id);
+          break;
+        }
+      else
+        {
+          puts("OBS! Cart ID does not exist.");
+        }
+    }
+}
+
+
+
 void event_loop()
 {
   storage_t *storage = make_storage();
@@ -438,7 +619,7 @@ Chec[k]out\n\
         }
       if (key_up == 'L')
         {
-          list_item(storage, false);
+          list_items(storage, false);
         }
       if (key_up == 'R')
         {
@@ -458,15 +639,15 @@ Chec[k]out\n\
         }
       if (key_up == 'C')
         {
-          
+          create_cart(storage);
         }
       if (key_up == 'M')
         {
-          
+          remove_cart(storage);
         }
       if (key_up == 'D')
         {
-          
+          add_to_cart(storage);
         }
       if (key_up == 'O')
         {
