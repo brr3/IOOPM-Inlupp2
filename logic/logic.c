@@ -369,6 +369,36 @@ shelf_t *find_shelf_in_item_shelves(ioopm_list_t *item_shelves, char *shelf_name
 
 
 
+void deplete_stock(storage_t *storage, cart_item_t *cart_item)
+{
+  item_t *item = extract_item_from_storage(*storage, get_cart_item_name(*cart_item), NULL);
+  ioopm_list_t *item_shelves = get_item_shelves(*item);
+  
+  int shelves_count = ioopm_linked_list_size(item_shelves);
+  int total_stock_decrease = get_cart_item_quantity(*cart_item);
+  int depleted_stock = 0;
+  for (int i = 0; i < shelves_count; i++)
+    {
+      shelf_t *shelf = (shelf_t*) ioopm_linked_list_get(item_shelves, i).v;
+      while (get_shelf_stock(*shelf) > 0)
+        {
+          set_shelf_stock(shelf, get_shelf_stock(*shelf) - 1);
+          ++depleted_stock;
+          if (depleted_stock >= total_stock_decrease)
+            {
+              return;
+            }
+        }
+      ioopm_linked_list_remove(item_shelves, i);
+      elem_t elem_shelf_name = {.s = get_shelf_name(*shelf)};
+      ioopm_hash_table_remove_entry(get_storage_locations(*storage), elem_shelf_name);
+      free(get_shelf_name(*shelf));
+      free(shelf);
+    }
+}
+
+
+
 //
 // CART LOGIC
 //
@@ -446,19 +476,6 @@ cart_t *extract_cart_from_storage(storage_t *storage, int cart_id)
       return NULL;
     }
 }
-
-
-
-/*void cart_item_names_to_array(cart_t cart, char *arr_names[])
-{
-  int cart_items_count = get_cart_items_amount(cart);
-  ioopm_list_t *cart_items = get_cart_items(cart);
-  for (int i = 0; i < cart_items_count; i++)
-    {
-      cart_item_t cart_item = *(cart_item_t*) ioopm_linked_list_get(cart_items, i).v;
-      arr_names[i] = get_cart_item_name(cart_item);
-    }
-} */
 
 
 

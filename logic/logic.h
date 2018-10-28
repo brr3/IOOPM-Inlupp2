@@ -191,6 +191,13 @@ void add_shelf_to_locations(storage_t *storage, char *shelf_name, char *item_nam
 /// @return             | The found shelf
 shelf_t *find_shelf_in_item_shelves(ioopm_list_t *item_shelves, char *shelf_name, int *index);
 
+/// @brief Deplete the stock of an item in storage
+/// @param storage | A storage containing two hash tables, one that maps names of items to
+///                | ...the address of the full information for that item, one that maps names
+///                | ...of storage locations to the name of the item stored at that location,
+///                | ...and a linked list of shopping carts
+void deplete_stock(storage_t *storage, cart_item_t *cart_item);
+
 //
 // CART LOGIC
 //
@@ -237,6 +244,9 @@ cart_t *extract_cart_from_storage(storage_t *storage, int cart_id);
 /// @param cart_id | The identification number of the shopping cart to add item to
 void add_item_to_cart(storage_t *storage, item_t item, int amount, int cart_id);
 
+/// @brief Remove an item from the shopping cart
+/// @param cart    | The shopping cart
+/// @param item_id | The identification number of the item to remove
 void remove_item_from_cart(cart_t *cart, int item_id);
 
 //

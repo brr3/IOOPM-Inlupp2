@@ -70,3 +70,25 @@ void remove_cart(storage_t *storage);
 ///                | ...of storage locations to the name of the item stored at that location,
 ///                | ...and a linked list of shopping carts
 void add_to_cart(storage_t *storage);
+
+/// @brief Let the user choose a shopping cart to remove an item from, ask for which item to remove,
+/// ...then remove it
+/// @param storage | A storage containing two hash tables, one that maps names of items to
+///                | ...the address of the full information for that item, one that maps names
+///                | ...of storage locations to the name of the item stored at that location,
+///                | ...and a linked list of shopping carts
+void remove_from_cart(storage_t *storage);
+
+/// @brief Let the user choose a shopping cart to calculate the total cost of
+/// @param storage | A storage containing two hash tables, one that maps names of items to
+///                | ...the address of the full information for that item, one that maps names
+///                | ...of storage locations to the name of the item stored at that location,
+///                | ...and a linked list of shopping carts
+void calculate_cart_cost(storage_t *storage);
+
+/// @brief Let the user choose a shopping cart to checkout, then remove it from the system
+/// @param storage | A storage containing two hash tables, one that maps names of items to
+///                | ...the address of the full information for that item, one that maps names
+///                | ...of storage locations to the name of the item stored at that location,
+///                | ...and a linked list of shopping carts
+void cart_checkout(storage_t *storage);

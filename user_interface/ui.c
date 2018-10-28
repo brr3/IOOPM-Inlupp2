@@ -607,7 +607,7 @@ void remove_from_cart(storage_t *storage)
     {
       list_carts(storage);
       
-      int cart_id = ask_question_int("Enter the number id of a non-empty cart you would like to remove an item from, or 0 to return back to menu:");
+      int cart_id = ask_question_int("Enter the number id of a non-empty cart you would like to remove an item from, or 0 to return to menu:");
 
       if (cart_id == 0)
         {
@@ -662,6 +662,128 @@ void remove_from_cart(storage_t *storage)
     {
       increase_cart_item_quantity(cart_item, -amount);
     }
+  puts("Item successfully removed from shopping cart!");
+}
+
+
+
+void calculate_cart_cost(storage_t *storage)
+{
+  int item_amount = get_storage_items_amount(*storage);
+  if (item_amount == 0)
+    {
+      puts("OBS! No merchandise has been added to the warehouse yet.");
+      return;
+    }
+  int carts_in_storage = get_storage_carts_amount(*storage);
+  if (carts_in_storage == 0)
+    {
+      puts("OBS! No carts have been added to the warehouse yet.");
+      return;
+    }
+
+  cart_t *cart;
+  while (true)
+    {
+      list_carts(storage);
+      
+      int cart_id = ask_question_int("Enter the number id of a non-empty cart you would like to calculate the cost of, or 0 to return to menu:");
+
+      if (cart_id == 0)
+        {
+          puts("Operation cancelled by user.");
+          return;
+        }
+      
+      if (cart_exists(storage, cart_id))
+        {
+          cart = extract_cart_from_storage(storage, cart_id);
+          if (get_cart_items_amount(*cart) == 0)
+            {
+              puts("OBS! This shopping cart is empty, please choose a non-empty one.");
+              continue;
+            }
+          else
+            {
+              break;
+            }
+        }
+      else
+        {
+          puts("OBS! Cart ID does not exist.");
+        }
+    }
+
+  int total_cost = 0;
+  for (int i = 0; i < get_cart_items_amount(*cart); i++)
+    {
+      cart_item_t cart_item = *get_cart_item_from_cart(*cart, i);
+      item_t item = *extract_item_from_storage(*storage, get_cart_item_name(cart_item), NULL);
+      total_cost += get_cart_item_quantity(cart_item) * (get_item_price(item) / 100);
+      printf("total cost = %d\n", total_cost);
+    }
+  print_cart(*cart);
+  printf("Total cost of selected shopping cart is: %d kr\n", total_cost);
+}
+
+
+
+void cart_checkout(storage_t *storage)
+{
+  int item_amount = get_storage_items_amount(*storage);
+  if (item_amount == 0)
+    {
+      puts("OBS! No merchandise has been added to the warehouse yet.");
+      return;
+    }
+  int carts_in_storage = get_storage_carts_amount(*storage);
+  if (carts_in_storage == 0)
+    {
+      puts("OBS! No carts have been added to the warehouse yet.");
+      return;
+    }
+  
+  cart_t *cart;
+  int cart_id = 0;
+  while (true)
+    {
+      list_carts(storage);
+      
+      cart_id = ask_question_int("Enter the number id of a non-empty cart you would like to checkout, or 0 to return to menu:");
+      
+      if (cart_id == 0)
+        {
+          puts("Operation cancelled by user.");
+          return;
+        }
+      
+      if (cart_exists(storage, cart_id))
+        {
+          cart = extract_cart_from_storage(storage, cart_id);
+          if (get_cart_items_amount(*cart) == 0)
+            {
+              puts("OBS! This shopping cart is empty, please choose a non-empty one.");
+              continue;
+            }
+          else
+            {
+              break;
+            }
+        }
+      else
+        {
+          puts("OBS! Cart ID does not exist.");
+        }
+    }
+
+  for (int i = 0; i < get_cart_items_amount(*cart); i++)
+    {
+      cart_item_t *cart_item = get_cart_item_from_cart(*cart, i);
+      deplete_stock(storage, cart_item);
+    }
+  
+  remove_cart_from_storage(storage, cart_id);
+  puts("Shopping cart successfully checked out!");
 }
 
 
@@ -729,11 +851,11 @@ Chec[k]out\n\
         }
       if (key_up == 'U')
         {
-          
+          calculate_cart_cost(storage);
         }
       if (key_up == 'K')
         {
-          
+          cart_checkout(storage);
         }
       if (key_up == 'Q')
         {
