@@ -12,7 +12,7 @@
 
 
 
-static void free_hash_table_keys_values(elem_t elem_key_ignored, elem_t elem_value, void *x_ignored)
+static void destroy_items(elem_t elem_key_ignored, elem_t elem_value, void *x_ignored)
 {
   item_t *item = elem_value.v;
   free(get_item_name(*item));
@@ -29,7 +29,7 @@ static void free_hash_table_keys_values(elem_t elem_key_ignored, elem_t elem_val
   free(elem_value.v);
 }
 
-static void free_cart_contents(elem_t elem_value, void *x_ignored)
+static void destroy_carts(elem_t elem_value, void *x_ignored)
 {
   cart_t *cart = elem_value.v;
   ioopm_list_t *cart_items = cart->cart_items;
@@ -45,10 +45,10 @@ static void free_cart_contents(elem_t elem_value, void *x_ignored)
 
 void destroy_storage(storage_t *storage)
 {
-  ioopm_hash_table_apply_to_all(storage->items, free_hash_table_keys_values, NULL);          
+  ioopm_hash_table_apply_to_all(storage->items, destroy_items, NULL);          
   ioopm_hash_table_destroy(storage->items);
   ioopm_hash_table_destroy(storage->locations);
-  ioopm_linked_apply_to_all(storage->carts, free_cart_contents, NULL);
+  ioopm_linked_apply_to_all(storage->carts, destroy_carts, NULL);
   ioopm_linked_list_destroy(storage->carts);
   free(storage);
 }
@@ -169,7 +169,7 @@ storage_t *make_storage()
   storage->items = items;
   storage->locations = locations;
   storage->carts = carts;
-  storage->cart_id = 0;
+  storage->cart_counter = 0;
   return storage;
 }
 
@@ -188,7 +188,7 @@ item_t *make_item(char *name, char *desc, int price)
   set_item_desc(item, desc);
   set_item_price(item, price);
   ioopm_list_t *shelves = ioopm_linked_list_create();
-  item->shelves = shelves;
+  set_item_shelves(item, shelves);
   return item;
 }
 
@@ -210,11 +210,11 @@ static char *to_upper(char *str)
 
 
 
-bool item_exists(storage_t *storage, char *item_name)
+bool item_exists(storage_t storage, char *item_name)
 {
   elem_t found_element;
   elem_t elem_name = {.s = to_upper(item_name)};
-  return ioopm_hash_table_lookup(storage->items, elem_name, &found_element);
+  return ioopm_hash_table_lookup(get_storage_items(storage), elem_name, &found_element);
 }
 
 
@@ -226,8 +226,8 @@ void remake_item(storage_t *storage, item_t *item)
   set_item_desc(new_item, get_item_desc(*item));
   set_item_price(new_item, get_item_price(*item));
   set_item_shelves(new_item, get_item_shelves(*item));
-  
-  add_item_to_storage(storage, new_item); // Side effect
+
+  add_item_to_storage(storage, new_item);
 
   free(item); // Side effect
 }
@@ -238,7 +238,7 @@ void add_item_to_storage(storage_t *storage, item_t *item)
 {
   elem_t elem_key = {.s = to_upper(get_item_name(*item))};
   elem_t elem_value = {.v = item};
-  ioopm_hash_table_insert(storage->items, elem_key, elem_value); // Side effect
+  ioopm_hash_table_insert(get_storage_items(*storage), elem_key, elem_value); // Side effect
 }
 
 
@@ -247,12 +247,12 @@ void remove_item_from_storage(storage_t *storage, item_t *item)
 {
   for (int i = 0; i < get_item_shelves_count(*item); i++)
     {
-      shelf_t *shelf = (shelf_t*) ioopm_linked_list_get(get_item_shelves(*item), i).v;
+      shelf_t *shelf = ioopm_linked_list_get(get_item_shelves(*item), i).v;
       elem_t elem_key_to_remove = {.s = get_shelf_name(*shelf)};
-      ioopm_hash_table_remove_entry(storage->locations, elem_key_to_remove); // Side effect
+      ioopm_hash_table_remove_entry(get_storage_locations(*storage), elem_key_to_remove); // Side effect
     } 
   elem_t elem_key_to_remove = {.s = get_item_name(*item)};
-  ioopm_hash_table_remove_entry(storage->items, elem_key_to_remove); // Side effect
+  ioopm_hash_table_remove_entry(get_storage_items(*storage), elem_key_to_remove); // Side effect
 }
 
 
@@ -267,10 +267,10 @@ static void sort_keys(char *keys[], size_t no_keys)
   qsort(keys, no_keys, sizeof(char *), cmp_string_ptr);
 }
 
-void storage_names_to_sorted_array(storage_t *storage, char *arr_names[])
+void item_names_to_sorted_array(storage_t storage, char *arr_names[])
 {
-  int item_count = ioopm_hash_table_size(storage->items);
-  ioopm_list_t *item_names = ioopm_hash_table_keys(storage->items);
+  int item_count = get_storage_items_amount(storage);
+  ioopm_list_t *item_names = ioopm_hash_table_keys(get_storage_items(storage));
   for (int i = 0; i < item_count; i++)
     {
       arr_names[i] = ioopm_linked_list_remove(item_names, i).s; // Side effect
@@ -281,14 +281,14 @@ void storage_names_to_sorted_array(storage_t *storage, char *arr_names[])
 
 
 
-item_t *extract_item_from_storage(storage_t *storage, char *item_name, elem_t *found_value)
+item_t *extract_item_from_storage(storage_t storage, char *item_name, elem_t *found_value)
 {
   if (found_value == NULL)
     {
       elem_t found_value;
       elem_t elem_key = {.s = item_name};
-      ioopm_hash_table_lookup(storage->items, elem_key, &found_value);
-      item_t *item = (item_t*) found_value.v;
+      ioopm_hash_table_lookup(get_storage_items(storage), elem_key, &found_value);
+      item_t *item = found_value.v;
       if (item == NULL)
         {
           assert(false); 
@@ -298,8 +298,8 @@ item_t *extract_item_from_storage(storage_t *storage, char *item_name, elem_t *f
   else
     {
       elem_t elem_key = {.s = item_name};
-      ioopm_hash_table_lookup(storage->items, elem_key, found_value); // Side effect
-      item_t *item = (item_t*) found_value->v;
+      ioopm_hash_table_lookup(get_storage_items(storage), elem_key, found_value); // Side effect
+      item_t *item = found_value->v;
       if (item == NULL)
         {
           assert(false); 
@@ -316,12 +316,20 @@ item_t *extract_item_from_storage(storage_t *storage, char *item_name, elem_t *f
 
 
 
-shelf_t *make_shelf(char *shelf_name, int amount)
+shelf_t *make_shelf(char *name, int amount)
 {
   shelf_t *shelf = calloc(1, sizeof(shelf_t));
-  shelf->shelf_name = shelf_name;
-  shelf->amount = amount;
+  set_shelf_name(shelf, name);
+  set_shelf_stock(shelf, amount);
   return shelf;
+}
+
+
+
+bool location_exists(storage_t storage, char *shelf_name, elem_t *found_value)
+{
+  elem_t elem_shelf_name = {.s = shelf_name};
+  return ioopm_hash_table_lookup(get_storage_locations(storage), elem_shelf_name, found_value);
 }
 
 
@@ -338,19 +346,19 @@ void add_shelf_to_locations(storage_t *storage, char *shelf_name, char *item_nam
 {
   elem_t elem_key = {.s = shelf_name};
   elem_t elem_value = {.s = item_name};
-  ioopm_hash_table_insert(storage->locations, elem_key, elem_value); // Side effect
+  ioopm_hash_table_insert(get_storage_locations(*storage), elem_key, elem_value); // Side effect
 }
 
 
 
-shelf_t *find_shelf_in_item_shelves(ioopm_list_t *item_shelves, char *shelf_name, int *index)
+shelf_t *find_shelf_in_item_shelves(ioopm_list_t *item_shelves, char *shelf_name_to_find, int *index)
 {
   int shelves_count = ioopm_linked_list_size(item_shelves);
   shelf_t *shelf;
   for (int i = 0; i < shelves_count; i++)
     {
       shelf = (shelf_t*) ioopm_linked_list_get(item_shelves, i).v;
-      if (strcmp(shelf->shelf_name, shelf_name) == 0)
+      if (strcmp(get_shelf_name(*shelf), shelf_name_to_find) == 0)
         {
           *index = i; // Side effect
           break;
@@ -370,9 +378,9 @@ shelf_t *find_shelf_in_item_shelves(ioopm_list_t *item_shelves, char *shelf_name
 static cart_t *make_cart(int id)
 {
   cart_t *cart = calloc(1, sizeof(cart_t));
-  cart->id = id;
+  set_cart_id(cart, id);
   ioopm_list_t *cart_items = ioopm_linked_list_create();
-  cart->cart_items = cart_items;
+  set_cart_items(cart, cart_items);
   return cart;
 }
 
@@ -380,7 +388,7 @@ static cart_t *make_cart(int id)
 
 static int cart_id_to_index(storage_t *storage, int id)
 {
-  int carts_in_storage = ioopm_linked_list_size(storage->carts);
+  int carts_in_storage = get_storage_carts_amount(*storage); 
   for (int i = 0; i < carts_in_storage; i++)
     {
       cart_t *cart = ioopm_linked_list_get(storage->carts, i).v;
@@ -404,9 +412,9 @@ bool cart_exists(storage_t *storage, int cart_id)
 
 void add_cart_to_storage(storage_t *storage)
 {
-  cart_t *cart = make_cart(++storage->cart_id);
+  cart_t *cart = make_cart(increase_cart_counter(storage));
   elem_t elem_cart = {.v = cart};
-  ioopm_linked_list_append(storage->carts, elem_cart);
+  ioopm_linked_list_append(get_storage_carts(*storage), elem_cart);
 }
 
 
@@ -414,13 +422,13 @@ void add_cart_to_storage(storage_t *storage)
 void remove_cart_from_storage(storage_t *storage, int cart_id)
 {
   int valid_index = cart_id_to_index(storage, cart_id);
-  cart_t *cart = ioopm_linked_list_get(storage->carts, valid_index).v;
+  cart_t *cart = ioopm_linked_list_get(get_storage_carts(*storage), valid_index).v;
   if (valid_index >= 0)
     {
-      ioopm_linked_list_remove(storage->carts, valid_index);
+      ioopm_linked_list_remove(get_storage_carts(*storage), valid_index);
     }
   elem_t elem_cart_to_remove = {.v = cart};
-  free_cart_contents(elem_cart_to_remove, NULL);
+  destroy_carts(elem_cart_to_remove, NULL);
 }
 
 
@@ -430,7 +438,7 @@ cart_t *extract_cart_from_storage(storage_t *storage, int cart_id)
   int valid_index = cart_id_to_index(storage, cart_id);
   if (valid_index >= 0)
     {
-      cart_t *cart = ioopm_linked_list_get(storage->carts, valid_index).v;
+      cart_t *cart = ioopm_linked_list_get(get_storage_carts(*storage), valid_index).v;
       return cart;
     }
   else
@@ -441,18 +449,18 @@ cart_t *extract_cart_from_storage(storage_t *storage, int cart_id)
 
 
 
-static cart_item_t *make_cart_item(char *name, int amount)
+static cart_item_t *make_cart_item(char *name, int quantity)
 {
   cart_item_t *cart_item = calloc(1, sizeof(cart_item_t));
-  cart_item->name = name;
-  cart_item->amount = amount;
+  set_cart_item_name(cart_item, name);
+  set_cart_item_quantity(cart_item, quantity);
   return cart_item;
 }
 
 static bool cart_item_exists(cart_t cart, char *item_name)
 {
-  ioopm_list_t *cart_items = cart.cart_items;
-  int cart_items_count = ioopm_linked_list_size(cart_items);
+  ioopm_list_t *cart_items = get_cart_items(cart);
+  int cart_items_count = get_cart_items_amount(cart);
   for (int i = 0; i < cart_items_count; i++)
     {
       cart_item_t *cart_item = ioopm_linked_list_get(cart_items, i).v;
@@ -464,7 +472,7 @@ static bool cart_item_exists(cart_t cart, char *item_name)
   return false;
 }
 
-void add_cart_item_to_cart(storage_t *storage, item_t item, int amount, int cart_id)
+void add_item_to_cart(storage_t *storage, item_t item, int amount, int cart_id)
 {
   cart_t *cart = extract_cart_from_storage(storage, cart_id);
   if (cart != NULL)
@@ -473,9 +481,9 @@ void add_cart_item_to_cart(storage_t *storage, item_t item, int amount, int cart
         {
           int valid_index = cart_id_to_index(storage, cart_id);
           cart_item_t *cart_item = ioopm_linked_list_get(cart->cart_items, valid_index).v;
-          if (cart_item->amount + amount <= get_item_total_amount(item))
+          if (cart_item->quantity + amount <= get_item_stock(item))
             {
-              cart_item->amount += amount;
+              cart_item->quantity += amount;
               puts("Item successfully added to shopping cart!");
             }
           else
@@ -487,7 +495,7 @@ void add_cart_item_to_cart(storage_t *storage, item_t item, int amount, int cart
         {         
           cart_item_t *cart_item = make_cart_item(get_item_name(item), amount);
           elem_t elem_cart_item = {.v = cart_item};
-          ioopm_linked_list_append(cart->cart_items, elem_cart_item);
+          ioopm_linked_list_append(get_cart_items(*cart), elem_cart_item);
           puts("Item sucessfully added to shopping cart!");
         }
     }
@@ -519,8 +527,8 @@ void print_item(item_t item, int id, bool print_stock)
           return;
         }
       ioopm_list_t *item_shelves = get_item_shelves(item);
-      shelf_t shelf = *((shelf_t*) ioopm_linked_list_get(item_shelves, 0).v);
-      int item_amount = get_item_total_amount(item);
+      shelf_t shelf = *(shelf_t*) ioopm_linked_list_get(item_shelves, 0).v;
+      int item_amount = get_item_stock(item);
       
       if (shelves_count == 1)
         {
@@ -538,11 +546,11 @@ void print_item(item_t item, int id, bool print_stock)
               shelf_t shelf = *((shelf_t*) ioopm_linked_list_get(item_shelves, i).v); 
               if (i < shelves_count - 1)
                 {
-                  printf("(%s, %d), ", get_shelf_name(shelf), get_shelf_amount(shelf)); 
+                  printf("(%s, %d), ", get_shelf_name(shelf), get_shelf_stock(shelf)); 
                 }
               else
                 {
-                  printf("(%s, %d)\n", get_shelf_name(shelf), get_shelf_amount(shelf));
+                  printf("(%s, %d)\n", get_shelf_name(shelf), get_shelf_stock(shelf));
                 }
             }
           printf("Total amount: %d\n", item_amount);
@@ -562,10 +570,10 @@ void print_item(item_t item, int id, bool print_stock)
 
 void print_cart(cart_t cart)
 {
-  int id = cart.id;
-  ioopm_list_t *cart_items = cart.cart_items;
+  int id = get_cart_id(cart);
+  ioopm_list_t *cart_items = get_cart_items(cart);
 
-  int items_in_cart = ioopm_linked_list_size(cart_items);
+  int items_in_cart = get_cart_items_amount(cart);
 
   if (items_in_cart == 0)
     {
@@ -578,7 +586,7 @@ void print_cart(cart_t cart)
     {
       cart_item_t cart_item = *(cart_item_t*) ioopm_linked_list_get(cart_items, 0).v;
       printf("--------[ # %d ]--------\n", id);
-      printf("1. Merchandise: %s\tAmount: %d\n", cart_item.name, cart_item.amount);
+      printf("1. Merchandise: %s\tAmount: %d\n", cart_item.name, cart_item.quantity);
       puts("------------------------");
     }
 
@@ -588,7 +596,7 @@ void print_cart(cart_t cart)
       for (int i = 0; i < items_in_cart; i++)
         {
           cart_item_t cart_item = *(cart_item_t*) ioopm_linked_list_get(cart_items, i).v;
-          printf("%d. Merchandise: %s\tAmount: %d\n", i + 1, cart_item.name, cart_item.amount);
+          printf("%d. Merchandise: %s\tAmount: %d\n", i + 1, cart_item.name, cart_item.quantity);
         }
       puts("------------------------");
     }

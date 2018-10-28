@@ -96,10 +96,9 @@ void add_item(storage_t *storage)
     }
   
   item_t *item = input_item();
-  while (item_exists(storage, get_item_name(*item))) 
+  while (item_exists(*storage, get_item_name(*item))) 
     {
       puts("OBS! The name of merchandise you entered already exists in the database.");
-      free(item->name);
       set_item_name(item, ask_question_string("Enter a different name: "));
     }
   add_item_to_storage(storage, item);
@@ -116,24 +115,24 @@ void list_items(storage_t *storage, bool print_stock)
       return;
     }
   
-  int item_count = ioopm_hash_table_size(storage->items);
-  if (item_count == 0)
+  int item_amount = get_storage_items_amount(*storage);
+  if (item_amount == 0)
     {
       puts("OBS! No merchandise has been added to the warehouse yet.");
       return;
     }
   
-  char *arr_names[item_count];
-  storage_names_to_sorted_array(storage, arr_names);
-  
+  char *arr_names[item_amount];
+  item_names_to_sorted_array(*storage, arr_names);
+ 
   int continues = 1;
-  for (int i = 0; i < item_count; i++)
+  for (int i = 0; i < item_amount; i++)
     {
-      item_t item = *extract_item_from_storage(storage, arr_names[i], NULL);      
+      item_t item = *extract_item_from_storage(*storage, arr_names[i], NULL);      
 
       print_item(item, i + 1, print_stock);
 
-      bool twenty_listings = i == continues * 20 - 1 && item_count > continues * 20;
+      bool twenty_listings = i == continues * 20 - 1 && item_amount > continues * 20;
       while (twenty_listings)
         {
           char *key = ask_question_yes_no(("Continue listing? (y/n)"));
@@ -164,23 +163,23 @@ void remove_item(storage_t *storage)
       return;
     }
   
-  int item_count = ioopm_hash_table_size(storage->items);
-  if (item_count == 0)
+  int item_amount = get_storage_items_amount(*storage);
+  if (item_amount == 0)
     {
       puts("OBS! No merchandise has been added to the warehouse yet.");
       return;
     }
   list_items(storage, false);
   
-  char *arr_names[item_count];
-  storage_names_to_sorted_array(storage, arr_names);
+  char *arr_names[item_amount];
+  item_names_to_sorted_array(*storage, arr_names);
 
   int lower_bound = 1;
-  int upper_bound = item_count;
+  int upper_bound = item_amount;
   int id = ask_question_check_nr("Enter the number id of the merchandise you would like to remove:", "OBS! A merchandise with that ID does not exist.", &lower_bound, &upper_bound);
 
   elem_t elem_value_to_remove;
-  item_t *item = extract_item_from_storage(storage, arr_names[id - 1], &elem_value_to_remove);
+  item_t *item = extract_item_from_storage(*storage, arr_names[id - 1], &elem_value_to_remove);
   
   puts("You have selected the following merchandise:");
   print_item(*item, id, true);
@@ -215,23 +214,23 @@ void edit_item(storage_t *storage)
       return;
     }
   
-  int item_count = ioopm_hash_table_size(storage->items);
-  if (item_count == 0)
+  int item_amount = get_storage_items_amount(*storage);
+  if (item_amount == 0)
     {
       puts("OBS! No merchandise has been added to the warehouse yet.");
       return;
     }
   list_items(storage, false);
   
-  char *arr_names[item_count];
-  storage_names_to_sorted_array(storage, arr_names);
+  char *arr_names[item_amount];
+  item_names_to_sorted_array(*storage, arr_names);
 
   int lower_bound = 1;
-  int upper_bound = item_count;
+  int upper_bound = item_amount;
   int id = ask_question_check_nr("Enter the number id of the merchandise you would like to edit:", "OBS! A merchandise with that ID does not exist.", &lower_bound, &upper_bound); 
 
   elem_t ignored_value;
-  item_t *item = extract_item_from_storage(storage, arr_names[id - 1], &ignored_value);
+  item_t *item = extract_item_from_storage(*storage, arr_names[id - 1], &ignored_value);
   bool item_name_modified = false;
   bool anything_modified = false;
 
@@ -251,22 +250,20 @@ void edit_item(storage_t *storage)
       if (answer == 1)
         {
           char *new_name = ask_question_string("Enter a new name, or the same name: ");
-          bool same_name = strcmp(new_name, item->name) == 0;          
-          while (item_exists(storage, new_name) && !same_name)
+          bool same_name = strcmp(new_name, get_item_name(*item)) == 0;          
+          while (item_exists(*storage, new_name) && !same_name)
             {
               puts("OBS! A merchandise with the name you entered already exists in the database.");
               free(new_name);
               new_name = ask_question_string("Enter a different name: ");
             }
-          remove_item_from_storage(storage, item);
-          free(item->name);
+          remove_item_from_storage(storage, item);         
           set_item_name(item, new_name);
           item_name_modified = true;
           anything_modified = true;
         }
       else if (answer == 2)
         {
-          free(item->desc);
           set_item_desc(item, ask_question_string("Enter a new description: "));
           anything_modified = true;
         }
@@ -307,22 +304,22 @@ void show_item_stock(storage_t *storage)
       return;
     }
   
-  int item_count = ioopm_hash_table_size(storage->items);
-  if (item_count == 0)
+  int item_amount = get_storage_items_amount(*storage);
+  if (item_amount == 0)
     {
       puts("OBS! No merchandise has been added to the warehouse yet.");
       return;
     }
   list_items(storage, false);
   
-  char *arr_names[item_count];
-  storage_names_to_sorted_array(storage, arr_names);
+  char *arr_names[item_amount];
+  item_names_to_sorted_array(*storage, arr_names);
 
   int lower_bound = 1;
-  int upper_bound = item_count;
+  int upper_bound = item_amount;
   int id = ask_question_check_nr("Enter the number id of the merchandise you would like to show the stock from:", "OBS! A merchandise with that ID does not exist.", &lower_bound, &upper_bound);
 
-  item_t item = *extract_item_from_storage(storage, arr_names[id - 1], NULL);
+  item_t item = *extract_item_from_storage(*storage, arr_names[id - 1], NULL);
   print_item(item, id, true);
 }
 
@@ -336,23 +333,23 @@ void replenish_item_stock(storage_t *storage)
       return;
     }
   
-  int item_count = ioopm_hash_table_size(storage->items);
-  if (item_count == 0)
+  int item_amount = get_storage_items_amount(*storage);
+  if (item_amount == 0)
     {
       puts("OBS! No merchandise has been added to the warehouse yet.");
       return;
     }
   list_items(storage, true);
   
-  char *arr_names[item_count];
-  storage_names_to_sorted_array(storage, arr_names);
+  char *arr_names[item_amount];
+  item_names_to_sorted_array(*storage, arr_names);
 
   int lower_bound = 1;
-  int upper_bound = item_count;
+  int upper_bound = item_amount;
   int id = ask_question_check_nr("Enter the number id of the merchandise you would like to replenish the stock of:", "OBS! A merchandise with that ID does not exist.", &lower_bound, &upper_bound);
 
   elem_t found_value;
-  item_t *item = extract_item_from_storage(storage, arr_names[id - 1], &found_value);
+  item_t *item = extract_item_from_storage(*storage, arr_names[id - 1], &found_value);
 
   puts("You have selected the following merchandise:");
   print_item(*item, id, true);
@@ -362,11 +359,10 @@ void replenish_item_stock(storage_t *storage)
       char *shelf_name = ask_question_shelf("Enter a storage location:\n\
 (format: yxx, where y = letter 'A-Z', x = digit 0-9)");
 
-      elem_t elem_shelf_name = {.s = shelf_name};
-      bool location_exists = ioopm_hash_table_lookup(storage->locations, elem_shelf_name, &found_value);
+      bool st_location_exists = location_exists(*storage, shelf_name, &found_value);
       bool names_equal = strcmp(found_value.s, get_item_name(*item)) == 0;
 
-      if (location_exists && names_equal)
+      if (st_location_exists && names_equal)
         {
           int tmp = 0;
           int *index = &tmp; 
@@ -376,7 +372,7 @@ void replenish_item_stock(storage_t *storage)
           int lower_bound = 1;
           int stock_increase = ask_question_check_nr("Enter how much you want to increase the stock by:", "OBS! Minimum value is 1.", &lower_bound, NULL);
           
-          increase_shelf_amount(shelf, stock_increase);
+          increase_shelf_stock(shelf, stock_increase);
           
           add_shelf_to_item_shelves(get_item_shelves(*item), shelf);
           
@@ -384,14 +380,14 @@ void replenish_item_stock(storage_t *storage)
           add_item_to_storage(storage, item);
         }
       
-      if (location_exists && !names_equal)
+      if (st_location_exists && !names_equal)
         {
           puts("OBS! The storage location you entered is already occupied by another item.");
           free(shelf_name);
           continue;
         }
       
-      if (!location_exists)
+      if (!st_location_exists)
         {                           
           int lower_bound = 1;
           int stock_increase = ask_question_check_nr("Enter how much you want to increase the stock by:", "OBS! Minimum value is 1.", &lower_bound, NULL);
@@ -419,7 +415,7 @@ static void list_carts(storage_t *storage)
       return;
     }
   
-  int carts_in_storage = ioopm_linked_list_size(storage->carts);
+  int carts_in_storage = get_storage_carts_amount(*storage);
   if (carts_in_storage == 0)
     {
       puts("OBS! No carts have been added to the warehouse yet.");
@@ -477,7 +473,7 @@ void remove_cart(storage_t *storage)
       puts("OBS! Storage not initialised.");
       return;
     }    
-  int carts_in_storage = ioopm_linked_list_size(storage->carts);
+  int carts_in_storage = get_storage_carts_amount(*storage);
   if (carts_in_storage == 0)
     {
       puts("OBS! No carts have been added to the warehouse yet.");
@@ -526,13 +522,13 @@ void remove_cart(storage_t *storage)
 
 void add_to_cart(storage_t *storage)
 {
-  int item_count = ioopm_hash_table_size(storage->items);
-  if (item_count == 0)
+  int item_amount = get_storage_items_amount(*storage);
+  if (item_amount == 0)
     {
       puts("OBS! No merchandise has been added to the warehouse yet.");
       return;
     }
-  int carts_in_storage = ioopm_linked_list_size(storage->carts);
+  int carts_in_storage = get_storage_carts_amount(*storage);
   if (carts_in_storage == 0)
     {
       puts("OBS! No carts have been added to the warehouse yet.");
@@ -540,21 +536,21 @@ void add_to_cart(storage_t *storage)
     }  
   list_items(storage, false);
 
-  char *arr_names[item_count];
-  storage_names_to_sorted_array(storage, arr_names);
+  char *arr_names[item_amount];
+  item_names_to_sorted_array(*storage, arr_names);
   
   int lower_bound = 1;
-  int upper_bound = item_count;
+  int upper_bound = item_amount;
   int item_id = ask_question_check_nr("Enter the number id of the item you would like to add:", "OBS! An item with that ID does not exist.", &lower_bound, &upper_bound);
 
   elem_t found_value;
-  item_t *item = extract_item_from_storage(storage, arr_names[item_id - 1], &found_value);
+  item_t *item = extract_item_from_storage(*storage, arr_names[item_id - 1], &found_value);
 
   puts("You have selected the following item:");
   print_item(*item, item_id, false);
 
   lower_bound = 0;
-  upper_bound = get_item_total_amount(*item);
+  upper_bound = get_item_stock(*item);
 
   if (upper_bound == 0)
     {
@@ -562,7 +558,7 @@ void add_to_cart(storage_t *storage)
       return;
     }
   
-  printf("Current stock of %s is %d\n", item->name, upper_bound);
+  printf("Current stock of %s is %d\n", get_item_name(*item), upper_bound);
   int amount = ask_question_check_nr("Enter a quantity, or 0 to cancel:", "OBS! You either entered a negative value, or a value greater than the current stock of the item.", &lower_bound, &upper_bound);
 
   if (amount == 0)
@@ -580,7 +576,7 @@ void add_to_cart(storage_t *storage)
       
       if (cart_exists(storage, cart_id))
         {
-          add_cart_item_to_cart(storage, *item, amount, cart_id);
+          add_item_to_cart(storage, *item, amount, cart_id);
           break;
         }
       else
