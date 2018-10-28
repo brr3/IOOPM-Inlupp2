@@ -1,4 +1,5 @@
 #include "elem.h"
+#include "logic.h"
 
 //
 // STORAGE OPERATIONS
@@ -161,6 +162,12 @@ int get_cart_items_amount(cart_t cart)
   return ioopm_linked_list_size(cart_items);
 }
 
+cart_item_t *get_cart_item_from_cart(cart_t cart, int item_id)
+{
+  ioopm_list_t *cart_items = get_cart_items(cart);
+  return ioopm_linked_list_get(cart_items, item_id - 1).v;
+}
+
 void set_cart_id(cart_t *cart, int id)
 {
   cart->id = id;
@@ -179,6 +186,11 @@ void set_cart_item_name(cart_item_t *cart_item, char *name)
 void set_cart_item_quantity(cart_item_t *cart_item, int quantity)
 {
   cart_item->quantity = quantity;
+}
+
+void increase_cart_item_quantity(cart_item_t *cart_item, int quantity)
+{
+  cart_item->quantity += quantity;
 }
 
 

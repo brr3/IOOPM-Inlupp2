@@ -114,7 +114,7 @@ void list_items(storage_t *storage, bool print_stock)
       puts("OBS! Storage not initialised.");
       return;
     }
-  
+
   int item_amount = get_storage_items_amount(*storage);
   if (item_amount == 0)
     {
@@ -543,14 +543,13 @@ void add_to_cart(storage_t *storage)
   int upper_bound = item_amount;
   int item_id = ask_question_check_nr("Enter the number id of the item you would like to add:", "OBS! An item with that ID does not exist.", &lower_bound, &upper_bound);
 
-  elem_t found_value;
-  item_t *item = extract_item_from_storage(*storage, arr_names[item_id - 1], &found_value);
+  item_t item = *extract_item_from_storage(*storage, arr_names[item_id - 1], NULL);
 
   puts("You have selected the following item:");
-  print_item(*item, item_id, false);
+  print_item(item, item_id, false);
 
   lower_bound = 0;
-  upper_bound = get_item_stock(*item);
+  upper_bound = get_item_stock(item);
 
   if (upper_bound == 0)
     {
@@ -558,8 +557,8 @@ void add_to_cart(storage_t *storage)
       return;
     }
   
-  printf("Current stock of %s is %d\n", get_item_name(*item), upper_bound);
-  int amount = ask_question_check_nr("Enter a quantity, or 0 to cancel:", "OBS! You either entered a negative value, or a value greater than the current stock of the item.", &lower_bound, &upper_bound);
+  printf("Current stock of %s is %d\n", get_item_name(item), upper_bound);
+  int amount = ask_question_check_nr("Enter a quantity, or 0 to return to menu:", "OBS! You either entered a negative value, or a value greater than the current stock of the item.", &lower_bound, &upper_bound);
 
   if (amount == 0)
     {
@@ -570,19 +569,98 @@ void add_to_cart(storage_t *storage)
   while (true)
     {
       list_carts(storage);
-      print_item(*item, item_id, false);
+      print_item(item, item_id, false);
       
       int cart_id = ask_question_int("Enter the number id of the cart you would like to add above item to:");
       
       if (cart_exists(storage, cart_id))
         {
-          add_item_to_cart(storage, *item, amount, cart_id);
+          add_item_to_cart(storage, item, amount, cart_id);
           break;
         }
       else
         {
           puts("OBS! Cart ID does not exist.");
         }
+    }
+}
+
+
+
+void remove_from_cart(storage_t *storage)
+{
+  int item_amount = get_storage_items_amount(*storage);
+  if (item_amount == 0)
+    {
+      puts("OBS! No merchandise has been added to the warehouse yet.");
+      return;
+    }
+  int carts_in_storage = get_storage_carts_amount(*storage);
+  if (carts_in_storage == 0)
+    {
+      puts("OBS! No carts have been added to the warehouse yet.");
+      return;
+    }
+
+  cart_t *cart;
+  while (true)
+    {
+      list_carts(storage);
+      
+      int cart_id = ask_question_int("Enter the number id of a non-empty cart you would like to remove an item from, or 0 to return back to menu:");
+
+      if (cart_id == 0)
+        {
+          puts("Operation cancelled by user.");
+          return;
+        }
+      
+      if (cart_exists(storage, cart_id))
+        {
+          cart = extract_cart_from_storage(storage, cart_id);
+          if (get_cart_items_amount(*cart) == 0)
+            {
+              puts("OBS! This shopping cart is empty, please choose a non-empty one.");
+              continue;
+            }
+          else
+            {
+              break;
+            }
+        }
+      else
+        {
+          puts("OBS! Cart ID does not exist.");
+        }
+    }
+  puts("You have selected the following shopping cart:");
+  print_cart(*cart);
+
+  int cart_items_amount = get_cart_items_amount(*cart);
+  
+  int lower_bound = 1;
+  int upper_bound = cart_items_amount;
+  int item_id = ask_question_check_nr("Enter the number id of the item you would like to remove from the shopping cart:", "OBS! An item with that ID does not exist in the selected shopping cart.", &lower_bound, &upper_bound);
+
+  cart_item_t *cart_item = get_cart_item_from_cart(*cart, item_id);
+  
+  lower_bound = 0;
+  upper_bound = get_cart_item_quantity(*cart_item);
+  int amount = ask_question_check_nr("Enter a quantity, or 0 to return to menu:", "OBS! You either entered a negative value, or a value greater than the current quantity in the shopping cart.", &lower_bound, &upper_bound);
+
+  if (amount == 0)
+    {
+      puts("Operation cancelled by user.");
+      return;
+    }
+
+  if (upper_bound - amount == 0)
+    {
+      remove_item_from_cart(cart, item_id); 
+    }
+  else
+    {
+      increase_cart_item_quantity(cart_item, -amount);
     }
 }
 
@@ -647,7 +725,7 @@ Chec[k]out\n\
         }
       if (key_up == 'O')
         {
-          
+          remove_from_cart(storage);
         }
       if (key_up == 'U')
         {

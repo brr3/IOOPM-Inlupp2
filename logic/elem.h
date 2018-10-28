@@ -72,6 +72,8 @@ int get_cart_item_quantity(cart_item_t cart_item);
 
 int get_cart_items_amount(cart_t cart);
 
+cart_item_t *get_cart_item_from_cart(cart_t cart, int item_id);
+
 void set_cart_id(cart_t *cart, int id);
 
 void set_cart_items(cart_t *cart, ioopm_list_t *cart_items);
@@ -79,5 +81,7 @@ void set_cart_items(cart_t *cart, ioopm_list_t *cart_items);
 void set_cart_item_name(cart_item_t *cart_item, char *name);
 
 void set_cart_item_quantity(cart_item_t *cart_item, int quantity);
+
+void increase_cart_item_quantity(cart_item_t *cart_item, int quantity);
 
 #endif

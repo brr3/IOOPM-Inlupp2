@@ -449,6 +449,19 @@ cart_t *extract_cart_from_storage(storage_t *storage, int cart_id)
 
 
 
+/*void cart_item_names_to_array(cart_t cart, char *arr_names[])
+{
+  int cart_items_count = get_cart_items_amount(cart);
+  ioopm_list_t *cart_items = get_cart_items(cart);
+  for (int i = 0; i < cart_items_count; i++)
+    {
+      cart_item_t cart_item = *(cart_item_t*) ioopm_linked_list_get(cart_items, i).v;
+      arr_names[i] = get_cart_item_name(cart_item);
+    }
+} */
+
+
+
 static cart_item_t *make_cart_item(char *name, int quantity)
 {
   cart_item_t *cart_item = calloc(1, sizeof(cart_item_t));
@@ -480,10 +493,10 @@ void add_item_to_cart(storage_t *storage, item_t item, int amount, int cart_id)
       if (cart_item_exists(*cart, get_item_name(item)))
         {
           int valid_index = cart_id_to_index(storage, cart_id);
-          cart_item_t *cart_item = ioopm_linked_list_get(cart->cart_items, valid_index).v;
-          if (cart_item->quantity + amount <= get_item_stock(item))
+          cart_item_t *cart_item = ioopm_linked_list_get(get_cart_items(*cart), valid_index).v;
+          if (get_cart_item_quantity(*cart_item) + amount <= get_item_stock(item))
             {
-              cart_item->quantity += amount;
+              increase_cart_item_quantity(cart_item, amount);
               puts("Item successfully added to shopping cart!");
             }
           else
@@ -499,6 +512,16 @@ void add_item_to_cart(storage_t *storage, item_t item, int amount, int cart_id)
           puts("Item sucessfully added to shopping cart!");
         }
     }
+}
+
+
+
+void remove_item_from_cart(cart_t *cart, int item_id)
+{
+  ioopm_list_t *cart_items = get_cart_items(*cart);
+  cart_item_t *cart_item = ioopm_linked_list_get(cart_items, item_id - 1).v;
+  ioopm_linked_list_remove(cart_items, item_id - 1);
+  free(cart_item);
 }
 
 

@@ -237,6 +237,8 @@ cart_t *extract_cart_from_storage(storage_t *storage, int cart_id);
 /// @param cart_id | The identification number of the shopping cart to add item to
 void add_item_to_cart(storage_t *storage, item_t item, int amount, int cart_id);
 
+void remove_item_from_cart(cart_t *cart, int item_id);
+
 //
 // PRINT FUNCTIONS
 //
