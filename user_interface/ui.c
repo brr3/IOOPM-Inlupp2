@@ -79,6 +79,21 @@ static int ask_question_check_nr(char *question, char *error_msg, int *lower_bou
 
 
 
+static bool storage_null(void *storage)
+{
+  if (storage == NULL)
+    {
+      puts("OBS! Storage not initialised.");
+      return true;
+    }
+  else
+    {
+      return false;
+    }
+}
+
+
+
 static item_t *input_item(void) 
 {
   char *name = ask_question_string("Enter a name: ");
@@ -89,11 +104,7 @@ static item_t *input_item(void)
 
 void add_item(storage_t *storage)
 {
-  if (storage == NULL)
-    {
-      puts("OBS! Storage not initialised.");
-      return;
-    }
+  if (storage_null(storage)) return;
   
   item_t *item = input_item();
   while (item_exists(*storage, get_item_name(*item))) 
@@ -107,21 +118,27 @@ void add_item(storage_t *storage)
 
 
 
-void list_items(storage_t *storage, bool print_stock)
+static bool storage_empty(storage_t *storage)
 {
-  if (storage == NULL)
-    {
-      puts("OBS! Storage not initialised.");
-      return;
-    }
-
-  int item_amount = get_storage_items_amount(*storage);
-  if (item_amount == 0)
+  if (get_storage_items_amount(*storage) == 0)
     {
       puts("OBS! No merchandise has been added to the warehouse yet.");
-      return;
+      return true;
     }
+  else
+    {
+      return false;
+    }
+}
+
+
+
+void list_items(storage_t *storage, bool print_stock)
+{
+  if (storage_null(storage)) return;
+  if (storage_empty(storage)) return;
   
+  int item_amount = get_storage_items_amount(*storage); 
   char *arr_names[item_amount];
   item_names_to_sorted_array(*storage, arr_names);
  
@@ -157,20 +174,12 @@ void list_items(storage_t *storage, bool print_stock)
 
 void remove_item(storage_t *storage)
 {
-  if (storage == NULL)
-    {
-      puts("OBS! Storage not initialised.");
-      return;
-    }
+  if (storage_null(storage)) return;
+  if (storage_empty(storage)) return;
   
-  int item_amount = get_storage_items_amount(*storage);
-  if (item_amount == 0)
-    {
-      puts("OBS! No merchandise has been added to the warehouse yet.");
-      return;
-    }
   list_items(storage, false);
-  
+
+  int item_amount = get_storage_items_amount(*storage);
   char *arr_names[item_amount];
   item_names_to_sorted_array(*storage, arr_names);
 
@@ -208,20 +217,12 @@ void remove_item(storage_t *storage)
 
 void edit_item(storage_t *storage)
 {
-  if (storage == NULL)
-    {
-      puts("OBS! Storage not initialised.");
-      return;
-    }
+  if (storage_null(storage)) return;
+  if (storage_empty(storage)) return;
   
-  int item_amount = get_storage_items_amount(*storage);
-  if (item_amount == 0)
-    {
-      puts("OBS! No merchandise has been added to the warehouse yet.");
-      return;
-    }
   list_items(storage, false);
-  
+
+  int item_amount = get_storage_items_amount(*storage);
   char *arr_names[item_amount];
   item_names_to_sorted_array(*storage, arr_names);
 
@@ -298,20 +299,12 @@ void edit_item(storage_t *storage)
 
 void show_item_stock(storage_t *storage)
 {
-  if (storage == NULL)
-    {
-      puts("OBS! Storage not initialised.");
-      return;
-    }
+  if (storage_null(storage)) return;
+  if (storage_empty(storage)) return;
   
-  int item_amount = get_storage_items_amount(*storage);
-  if (item_amount == 0)
-    {
-      puts("OBS! No merchandise has been added to the warehouse yet.");
-      return;
-    }
   list_items(storage, false);
-  
+
+  int item_amount = get_storage_items_amount(*storage);
   char *arr_names[item_amount];
   item_names_to_sorted_array(*storage, arr_names);
 
@@ -327,20 +320,12 @@ void show_item_stock(storage_t *storage)
 
 void replenish_item_stock(storage_t *storage)
 {
-  if (storage == NULL)
-    {
-      puts("OBS! Storage not initialised.");
-      return;
-    }
+  if (storage_null(storage)) return;
+  if (storage_empty(storage)) return;
   
-  int item_amount = get_storage_items_amount(*storage);
-  if (item_amount == 0)
-    {
-      puts("OBS! No merchandise has been added to the warehouse yet.");
-      return;
-    }
   list_items(storage, true);
-  
+
+  int item_amount = get_storage_items_amount(*storage);
   char *arr_names[item_amount];
   item_names_to_sorted_array(*storage, arr_names);
 
@@ -407,22 +392,29 @@ void replenish_item_stock(storage_t *storage)
 
 
 
-static void list_carts(storage_t *storage)
+static bool no_carts_in_storage(storage_t *storage)
 {
-  if (storage == NULL)
-    {
-      puts("OBS! Storage not initialised.");
-      return;
-    }
-  
-  int carts_in_storage = get_storage_carts_amount(*storage);
-  if (carts_in_storage == 0)
+  if (get_storage_carts_amount(*storage) == 0)
     {
       puts("OBS! No carts have been added to the warehouse yet.");
-      return;
+      return true;
     }
+  else
+    {
+      return false;
+    }
+}
+
+
+
+static void list_carts(storage_t *storage)
+{
+  if (storage_null(storage)) return;
+  if (no_carts_in_storage(storage)) return;
   
+  int carts_in_storage = get_storage_carts_amount(*storage);
   int continues = 1;
+  
   for (int i = 0; i < carts_in_storage; i++)
     {
       cart_t cart = *(cart_t*) ioopm_linked_list_get(storage->carts, i).v;
@@ -454,12 +446,8 @@ static void list_carts(storage_t *storage)
 
 void create_cart(storage_t *storage)
 {
-  if (storage == NULL)
-    {
-      puts("OBS! Storage not initialised.");
-      return;
-    }
-    
+  if (storage_null(storage)) return;
+  
   add_cart_to_storage(storage);
   puts("Cart successfully added!");
 }
@@ -468,17 +456,9 @@ void create_cart(storage_t *storage)
 
 void remove_cart(storage_t *storage)
 {
-  if (storage == NULL)
-    {
-      puts("OBS! Storage not initialised.");
-      return;
-    }    
-  int carts_in_storage = get_storage_carts_amount(*storage);
-  if (carts_in_storage == 0)
-    {
-      puts("OBS! No carts have been added to the warehouse yet.");
-      return;
-    }
+  if (storage_null(storage)) return;
+  if (no_carts_in_storage(storage)) return;
+  
   list_carts(storage);
 
   int cart_id = 0;
@@ -522,20 +502,13 @@ void remove_cart(storage_t *storage)
 
 void add_to_cart(storage_t *storage)
 {
-  int item_amount = get_storage_items_amount(*storage);
-  if (item_amount == 0)
-    {
-      puts("OBS! No merchandise has been added to the warehouse yet.");
-      return;
-    }
-  int carts_in_storage = get_storage_carts_amount(*storage);
-  if (carts_in_storage == 0)
-    {
-      puts("OBS! No carts have been added to the warehouse yet.");
-      return;
-    }  
+  if (storage_null(storage)) return;
+  if (storage_empty(storage)) return;
+  if (no_carts_in_storage(storage)) return;
+  
   list_items(storage, false);
 
+  int item_amount = get_storage_items_amount(*storage);
   char *arr_names[item_amount];
   item_names_to_sorted_array(*storage, arr_names);
   
@@ -589,20 +562,12 @@ void add_to_cart(storage_t *storage)
 
 void remove_from_cart(storage_t *storage)
 {
-  int item_amount = get_storage_items_amount(*storage);
-  if (item_amount == 0)
-    {
-      puts("OBS! No merchandise has been added to the warehouse yet.");
-      return;
-    }
-  int carts_in_storage = get_storage_carts_amount(*storage);
-  if (carts_in_storage == 0)
-    {
-      puts("OBS! No carts have been added to the warehouse yet.");
-      return;
-    }
+  if (storage_null(storage)) return;
+  if (storage_empty(storage)) return;
+  if (no_carts_in_storage(storage)) return;
 
   cart_t *cart;
+  
   while (true)
     {
       list_carts(storage);
@@ -633,6 +598,7 @@ void remove_from_cart(storage_t *storage)
           puts("OBS! Cart ID does not exist.");
         }
     }
+  
   puts("You have selected the following shopping cart:");
   print_cart(*cart);
 
@@ -662,6 +628,7 @@ void remove_from_cart(storage_t *storage)
     {
       increase_cart_item_quantity(cart_item, -amount);
     }
+  
   puts("Item successfully removed from shopping cart!");
 }
 
@@ -669,20 +636,12 @@ void remove_from_cart(storage_t *storage)
 
 void calculate_cart_cost(storage_t *storage)
 {
-  int item_amount = get_storage_items_amount(*storage);
-  if (item_amount == 0)
-    {
-      puts("OBS! No merchandise has been added to the warehouse yet.");
-      return;
-    }
-  int carts_in_storage = get_storage_carts_amount(*storage);
-  if (carts_in_storage == 0)
-    {
-      puts("OBS! No carts have been added to the warehouse yet.");
-      return;
-    }
+  if (storage_null(storage)) return;
+  if (storage_empty(storage)) return;
+  if (no_carts_in_storage(storage)) return;
 
   cart_t *cart;
+  
   while (true)
     {
       list_carts(storage);
@@ -729,21 +688,13 @@ void calculate_cart_cost(storage_t *storage)
 
 void cart_checkout(storage_t *storage)
 {
-  int item_amount = get_storage_items_amount(*storage);
-  if (item_amount == 0)
-    {
-      puts("OBS! No merchandise has been added to the warehouse yet.");
-      return;
-    }
-  int carts_in_storage = get_storage_carts_amount(*storage);
-  if (carts_in_storage == 0)
-    {
-      puts("OBS! No carts have been added to the warehouse yet.");
-      return;
-    }
+  if (storage_null(storage)) return;
+  if (storage_empty(storage)) return;
+  if (no_carts_in_storage(storage)) return;  
   
   cart_t *cart;
   int cart_id = 0;
+  
   while (true)
     {
       list_carts(storage);
@@ -780,8 +731,8 @@ void cart_checkout(storage_t *storage)
       cart_item_t *cart_item = get_cart_item_from_cart(*cart, i);
       deplete_stock(storage, cart_item);
     }
-  
   remove_cart_from_storage(storage, cart_id);
+  
   puts("Shopping cart successfully checked out!");
 }
 
