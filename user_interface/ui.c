@@ -720,7 +720,6 @@ void calculate_cart_cost(storage_t *storage)
       cart_item_t cart_item = *get_cart_item_from_cart(*cart, i);
       item_t item = *extract_item_from_storage(*storage, get_cart_item_name(cart_item), NULL);
       total_cost += get_cart_item_quantity(cart_item) * (get_item_price(item) / 100);
-      printf("total cost = %d\n", total_cost);
     }
   print_cart(*cart);
   printf("Total cost of selected shopping cart is: %d kr\n", total_cost);
