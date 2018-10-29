@@ -145,7 +145,7 @@ void item_names_to_sorted_array(storage_t storage, char *arr_names[]);
 ///                    | ...of storage locations to the name of the item stored at that location,
 ///                    | ...and a linked list of shopping carts
 /// @param item_name   | Name of the merchandise to retrieve
-/// @param found_value | Value overwritten by the address of the full information for the merchandise,
+/// @param found_value | Value to be overwritten by the address of the full information for the merchandise,
 ///                    | ...can be NULL but then you MUST dereference the return value before use
 /// @return            | The address to the found merchandise
 item_t *extract_item_from_storage(storage_t storage, char *item_name, elem_t *found_value);
@@ -154,49 +154,36 @@ item_t *extract_item_from_storage(storage_t storage, char *item_name, elem_t *fo
 // SHELF LOGIC
 //
 
-/// @brief Create a shelf with the given parameters
-/// @param name   | Name of the shelf
-/// @param amount | Amount of merchandise to be stored on the shelf
-/// @return       | A newly created shelf
-shelf_t *make_shelf(char *shelf_name, int amount);
-
 /// @brief Check if a storage location exists
 /// @param storage     | A storage containing two hash tables, one that maps names of items to
 ///                    | ...the address of the full information for that item, one that maps names
 ///                    | ...of storage locations to the name of the item stored at that location,
 ///                    | ...and a linked list of shopping carts
 /// @param shelf_name  | The name of the shelf
-/// @param found_value | Value overwritten by the address of the full information for the shelf
+/// @param found_value | Value to be overwritten by the address of the full information for the shelf
+///                    | ...can be NULL
 /// @return            | True if storage location is found, else false
 bool location_exists(storage_t storage, char *shelf_name, elem_t *found_value);
 
-/// @brief              | Add shelf to the list of shelves for a particular merchandise
-/// @param item_shelves | A linked list where each element is a pointer to a shelf
-/// @param shelf        | Shelf to add
-void add_shelf_to_item_shelves(ioopm_list_t *item_shelves, shelf_t *shelf);
+/// @brief Create a shelf and add it to storage
+/// @param item       | Item to update with shelf location
+/// @param shelf_name | Name of the shelf to create
+/// @param stock      | Stock of the shelf to create
+void add_shelf_to_storage(storage_t *storage, item_t *item, char *shelf_name, int stock);
 
-/// @brief Insert the name of an item into the second hash table mentioned below
-/// @param storage    | A storage containing two hash tables, one that maps names of items to
-///                   | ...the address of the full information for that item, one that maps names
-///                   | ...of storage locations to the name of the item stored at that location,
-///                   | ...and a linked list of shopping carts
-/// @param shelf_name | Name of shelf to use as key
-/// @param item_name  | Name of the item to be inserted into the hash table 
-void add_shelf_to_locations(storage_t *storage, char *shelf_name, char *item_name);
+/// @brief Find the specified shelf in item
+/// @param item               | Item to extract item shelves from
+/// @param shelf_name_to_find | Name of the shelf sought
+/// @return                   | The found shelf
+shelf_t *find_shelf_in_item(item_t *item, char *shelf_name_to_find);
 
-/// @brief Find the specified shelf in a list of shelves
-/// @param item_shelves | List operated upon
-/// @param shelf_name   | Name of the shelf sought
-/// @param index        | The index of the found shelf in the list, visible outside the function
-/// @return             | The found shelf
-shelf_t *find_shelf_in_item_shelves(ioopm_list_t *item_shelves, char *shelf_name, int *index);
-
-/// @brief Deplete the stock of an item in storage
+/// @brief Checkout all items in a cart
 /// @param storage | A storage containing two hash tables, one that maps names of items to
 ///                | ...the address of the full information for that item, one that maps names
 ///                | ...of storage locations to the name of the item stored at that location,
 ///                | ...and a linked list of shopping carts
-void deplete_stock(storage_t *storage, cart_item_t *cart_item);
+/// @param cart    | Shopping cart to checkout
+void checkout_cart_items(storage_t *storage, cart_t *cart);
 
 //
 // CART LOGIC
@@ -209,7 +196,7 @@ void deplete_stock(storage_t *storage, cart_item_t *cart_item);
 ///                | ...and a linked list of shopping carts
 /// @param cart_id | The identification number of the shopping cart to check for
 /// @return        | True if a cart is found, else false
-bool cart_exists(storage_t *storage, int cart_id);
+bool cart_exists(storage_t storage, int cart_id);
 
 /// @brief Add a new shopping cart to storage
 /// @param storage | A storage containing two hash tables, one that maps names of items to
@@ -226,15 +213,15 @@ void add_cart_to_storage(storage_t *storage);
 /// @param cart_id | The identification number of the shopping cart to remove
 void remove_cart_from_storage(storage_t *storage, int cart_id);
 
-/// @brief Retrieve a cart from storage
+/// @brief Retrieve a shopping cart from storage
 /// @param storage | A storage containing two hash tables, one that maps names of items to
 ///                | ...the address of the full information for that item, one that maps names
 ///                | ...of storage locations to the name of the item stored at that location,
 ///                | ...and a linked list of shopping carts
 /// @param cart_id | The identification number of the shopping cart to retrieve 
-cart_t *extract_cart_from_storage(storage_t *storage, int cart_id);
+cart_t *extract_cart_from_storage(storage_t storage, int cart_id);
 
-/// @brief Add item to a cart
+/// @brief Add an item to a shopping cart
 /// @param storage | A storage containing two hash tables, one that maps names of items to
 ///                | ...the address of the full information for that item, one that maps names
 ///                | ...of storage locations to the name of the item stored at that location,
@@ -242,9 +229,9 @@ cart_t *extract_cart_from_storage(storage_t *storage, int cart_id);
 /// @param item    | The item to add
 /// @param amount  | Amount of item to add
 /// @param cart_id | The identification number of the shopping cart to add item to
-void add_item_to_cart(storage_t *storage, item_t item, int amount, int cart_id);
+void add_item_to_cart(storage_t storage, item_t item, int amount, int cart_id);
 
-/// @brief Remove an item from the shopping cart
+/// @brief Remove an item from a shopping cart
 /// @param cart    | The shopping cart
 /// @param item_id | The identification number of the item to remove
 void remove_item_from_cart(cart_t *cart, int item_id);
@@ -260,7 +247,7 @@ void remove_item_from_cart(cart_t *cart, int item_id);
 ///                    | False: print only the basic information of the item
 void print_item(item_t item, int id, bool print_stock);
 
-/// @brief Retrieve all information from a cart and print it to screen
+/// @brief Retrieve all information from a shopping cart and print it to screen
 /// @param cart | The shopping cart to print
 void print_cart(cart_t cart);
 

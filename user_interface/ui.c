@@ -9,6 +9,9 @@
 
 
 
+/// brief Ask the user for a shelf name and check its validity
+/// param question | Text to print to screen
+/// returns        | A valid shelf name
 static char *ask_question_shelf(char *question)
 {
   return ask_question(question, is_shelf, (convert_func) strdup).string_value;
@@ -16,26 +19,38 @@ static char *ask_question_shelf(char *question)
 
 
 
+/// brief Ask the user for a menu character and check its validity
+/// param question | Text to print to screen
+/// returns        | A valid string beginning with a menu character
 static char *ask_question_menu(char *question)
 {
-  char *key = ask_question(question, is_menu_key, (convert_func) strdup).string_value;
-  return key;
+  return ask_question(question, is_menu_key, (convert_func) strdup).string_value;
 }
 
 
 
+/// brief Ask the user for confirmation
+/// param question | The question to print to screen
+/// returns        | A valid string beginning with y, Y, n or N
 static char *ask_question_yes_no(char *question)
 {
-  char *key = ask_question(question, is_yn_key, (convert_func) strdup).string_value;
-  return key;
+  return ask_question(question, is_yn_key, (convert_func) strdup).string_value;
 }
 
 
 
+/// brief Ask the user for a number and check its value
+/// param question    | Text to print to screen
+/// param error_msg   | The message to print to screen if the number entered by the user is incorrect
+/// param lower_bound | The entered number should be larger than this value,
+///                   | ...can be NULL and will then be ignored
+/// param upper_bound | The entered number should be smaller than this value,
+///                   | ...can be NULL and will then be ignored
+/// returns           | A valid number
 static int ask_question_check_nr(char *question, char *error_msg, int *lower_bound, int *upper_bound)
 {
   int nr = ask_question_int(question);
-  if (lower_bound != NULL && upper_bound == NULL)
+  if (lower_bound && !upper_bound)
     {
       if (nr >= *lower_bound)
         {
@@ -47,7 +62,7 @@ static int ask_question_check_nr(char *question, char *error_msg, int *lower_bou
           return ask_question_check_nr(question, error_msg, lower_bound, upper_bound);
         }
     }
-  else if (lower_bound == NULL && upper_bound != NULL)
+  else if (!lower_bound && upper_bound)
     {
       if (nr <= *upper_bound)
         {
@@ -59,7 +74,7 @@ static int ask_question_check_nr(char *question, char *error_msg, int *lower_bou
           return ask_question_check_nr(question, error_msg, lower_bound, upper_bound);
         }
     }
-  else if (lower_bound != NULL && upper_bound != NULL)
+  else if (lower_bound && upper_bound)
     {
       if (nr >= *lower_bound && nr <= *upper_bound)
         {
@@ -79,6 +94,12 @@ static int ask_question_check_nr(char *question, char *error_msg, int *lower_bou
 
 
 
+/// brief Check if storage pointer is null
+/// param storage | A storage containing two hash tables, one that maps names of items to
+///               | ...the address of the full information for that item, one that maps names
+///               | ...of storage locations to the name of the item stored at that location,
+///               | ...and a linked list of shopping carts
+/// returns       | True if storage pointer is null, else false
 static bool storage_null(void *storage)
 {
   if (storage == NULL)
@@ -94,6 +115,26 @@ static bool storage_null(void *storage)
 
 
 
+/// brief Check if parameter nr is 0
+/// param nr | The number to check
+/// returns  | True if nr is 0, else false
+static bool operation_cancelled(int nr)
+{
+  if (nr == 0)
+    {
+      puts("Operation cancelled by user.");
+      return true;
+    }
+  else
+    {
+      return false;
+    }  
+}
+
+
+
+/// brief Let the user specify parameters for creating an item
+/// returns | A newly created item
 static item_t *input_item(void) 
 {
   char *name = ask_question_string("Enter a name: ");
@@ -185,7 +226,9 @@ void remove_item(storage_t *storage)
 
   int lower_bound = 1;
   int upper_bound = item_amount;
-  int id = ask_question_check_nr("Enter the number id of the merchandise you would like to remove:", "OBS! A merchandise with that ID does not exist.", &lower_bound, &upper_bound);
+  int id = ask_question_check_nr("Enter the number id of the merchandise you would like to remove, or 0 to return to menu:"
+                                 , "OBS! A merchandise with that ID does not exist."
+                                 , &lower_bound, &upper_bound);
 
   elem_t elem_value_to_remove;
   item_t *item = extract_item_from_storage(*storage, arr_names[id - 1], &elem_value_to_remove);
@@ -226,9 +269,13 @@ void edit_item(storage_t *storage)
   char *arr_names[item_amount];
   item_names_to_sorted_array(*storage, arr_names);
 
-  int lower_bound = 1;
+  int lower_bound = 0;
   int upper_bound = item_amount;
-  int id = ask_question_check_nr("Enter the number id of the merchandise you would like to edit:", "OBS! A merchandise with that ID does not exist.", &lower_bound, &upper_bound); 
+  int id = ask_question_check_nr("Enter the number id of the merchandise you would like to edit:"
+                                 , "OBS! A merchandise with that ID does not exist."
+                                 , &lower_bound, &upper_bound);
+
+  if (operation_cancelled(id)) return;
 
   elem_t ignored_value;
   item_t *item = extract_item_from_storage(*storage, arr_names[id - 1], &ignored_value);
@@ -246,7 +293,7 @@ void edit_item(storage_t *storage)
 [1] Name\n\
 [2] Description\n\
 [3] Price\n\
-[4] Nothing, let me out of here", "OBS! Enter a number between 1 and 4.", &lower_bound, &upper_bound);
+[4] Return to menu", "OBS! Enter a number between 1 and 4.", &lower_bound, &upper_bound);
 
       if (answer == 1)
         {
@@ -308,9 +355,13 @@ void show_item_stock(storage_t *storage)
   char *arr_names[item_amount];
   item_names_to_sorted_array(*storage, arr_names);
 
-  int lower_bound = 1;
+  int lower_bound = 0;
   int upper_bound = item_amount;
-  int id = ask_question_check_nr("Enter the number id of the merchandise you would like to show the stock from:", "OBS! A merchandise with that ID does not exist.", &lower_bound, &upper_bound);
+  int id = ask_question_check_nr("Enter the number id of the merchandise you would like to show the stock from, or 0 to return to menu:"
+                                 , "OBS! A merchandise with that ID does not exist."
+                                 , &lower_bound, &upper_bound);
+
+  if (operation_cancelled(id)) return;
 
   item_t item = *extract_item_from_storage(*storage, arr_names[id - 1], NULL);
   print_item(item, id, true);
@@ -329,9 +380,13 @@ void replenish_item_stock(storage_t *storage)
   char *arr_names[item_amount];
   item_names_to_sorted_array(*storage, arr_names);
 
-  int lower_bound = 1;
+  int lower_bound = 0;
   int upper_bound = item_amount;
-  int id = ask_question_check_nr("Enter the number id of the merchandise you would like to replenish the stock of:", "OBS! A merchandise with that ID does not exist.", &lower_bound, &upper_bound);
+  int id = ask_question_check_nr("Enter the number id of the merchandise you would like to replenish the stock of:"
+                                 , "OBS! A merchandise with that ID does not exist."
+                                 , &lower_bound, &upper_bound);
+
+  if (operation_cancelled(id)) return;
 
   elem_t found_value;
   item_t *item = extract_item_from_storage(*storage, arr_names[id - 1], &found_value);
@@ -348,43 +403,34 @@ void replenish_item_stock(storage_t *storage)
       bool names_equal = strcmp(found_value.s, get_item_name(*item)) == 0;
 
       if (st_location_exists && names_equal)
-        {
-          int tmp = 0;
-          int *index = &tmp; 
-          shelf_t *shelf = find_shelf_in_item_shelves(get_item_shelves(*item), shelf_name, index);
-          ioopm_linked_list_remove(get_item_shelves(*item), *index);
+        {          
+          int lower_bound = 0;
+          int stock_increase = ask_question_check_nr("Enter how much you want to increase stock by, or 0 to return to menu:"
+                                                     , "OBS! Minimum value is 0."
+                                                     , &lower_bound, NULL);
+          
+          if (operation_cancelled(stock_increase)) return;          
 
-          int lower_bound = 1;
-          int stock_increase = ask_question_check_nr("Enter how much you want to increase the stock by:", "OBS! Minimum value is 1.", &lower_bound, NULL);
-          
-          increase_shelf_stock(shelf, stock_increase);
-          
-          add_shelf_to_item_shelves(get_item_shelves(*item), shelf);
-          
-          set_item_shelves(item, get_item_shelves(*item));
-          add_item_to_storage(storage, item);
+          increase_shelf_stock(find_shelf_in_item(item, shelf_name), stock_increase);       
         }
-      
-      if (st_location_exists && !names_equal)
+      else if (st_location_exists && !names_equal)
         {
           puts("OBS! The storage location you entered is already occupied by another item.");
           free(shelf_name);
           continue;
         }
-      
-      if (!st_location_exists)
+      else
         {                           
-          int lower_bound = 1;
-          int stock_increase = ask_question_check_nr("Enter how much you want to increase the stock by:", "OBS! Minimum value is 1.", &lower_bound, NULL);
-          shelf_t *shelf = make_shelf(shelf_name, stock_increase);
+          int lower_bound = 0;
+          int stock = ask_question_check_nr("Enter how much you want to increase stock by"
+                                            , "OBS! Minimum value is 0."
+                                            , &lower_bound, NULL);
 
-          add_shelf_to_item_shelves(get_item_shelves(*item), shelf);
+          if (operation_cancelled(stock)) return;
           
-          set_item_shelves(item, get_item_shelves(*item));
-          add_item_to_storage(storage, item);
-
-          add_shelf_to_locations(storage, get_shelf_name(*shelf), get_item_name(*item));
+          add_shelf_to_storage(storage, item, shelf_name, stock);
         }
+      
       puts("Merchandise successfully replenished!");
       break;
     }
@@ -392,6 +438,12 @@ void replenish_item_stock(storage_t *storage)
 
 
 
+/// brief Check if there are any shopping carts in storage
+/// param storage | A storage containing two hash tables, one that maps names of items to
+///               | ...the address of the full information for that item, one that maps names
+///               | ...of storage locations to the name of the item stored at that location,
+///               | ...and a linked list of shopping carts
+/// returns       | True if there are no shopping carts in storage, else false
 static bool no_carts_in_storage(storage_t *storage)
 {
   if (get_storage_carts_amount(*storage) == 0)
@@ -407,6 +459,11 @@ static bool no_carts_in_storage(storage_t *storage)
 
 
 
+/// brief List all shopping carts in storage
+/// param storage | A storage containing two hash tables, one that maps names of items to
+///               | ...the address of the full information for that item, one that maps names
+///               | ...of storage locations to the name of the item stored at that location,
+///               | ...and a linked list of shopping carts
 static void list_carts(storage_t *storage)
 {
   if (storage_null(storage)) return;
@@ -464,8 +521,11 @@ void remove_cart(storage_t *storage)
   int cart_id = 0;
   while (true)
     {
-      cart_id = ask_question_int("Enter the number id of the cart you would like to remove:");
-      if (cart_exists(storage, cart_id))
+      cart_id = ask_question_int("Enter the number id of the cart you would like to remove, or 0 to return to menu:");
+      
+      if (operation_cancelled(cart_id)) return;
+      
+      if (cart_exists(*storage, cart_id))
         {
           break;
         }
@@ -475,7 +535,7 @@ void remove_cart(storage_t *storage)
         }
     }
 
-  cart_t cart = *extract_cart_from_storage(storage, cart_id);
+  cart_t cart = *extract_cart_from_storage(*storage, cart_id);
   while (true)
     {
       print_cart(cart);
@@ -500,6 +560,24 @@ void remove_cart(storage_t *storage)
 
 
 
+/// brief Check if item is in stock
+/// param item | Item to check
+/// returns    | True if item is not in stock, else false
+static bool item_not_in_stock(item_t item)
+{
+  if (get_item_stock(item) == 0)
+    {
+      puts("OBS! The selected item is not in stock.");
+      return true;
+    }
+  else
+    {
+      return false;
+    }
+}
+
+
+
 void add_to_cart(storage_t *storage)
 {
   if (storage_null(storage)) return;
@@ -514,46 +592,44 @@ void add_to_cart(storage_t *storage)
   
   int lower_bound = 1;
   int upper_bound = item_amount;
-  int item_id = ask_question_check_nr("Enter the number id of the item you would like to add:", "OBS! An item with that ID does not exist.", &lower_bound, &upper_bound);
-
+  int item_id = ask_question_check_nr("Enter the number id of the item you would like to add:"
+                                      , "OBS! An item with that ID does not exist."
+                                      , &lower_bound, &upper_bound);
+  
   item_t item = *extract_item_from_storage(*storage, arr_names[item_id - 1], NULL);
+
+  if (item_not_in_stock(item)) return;
 
   puts("You have selected the following item:");
   print_item(item, item_id, false);
 
   lower_bound = 0;
   upper_bound = get_item_stock(item);
-
-  if (upper_bound == 0)
-    {
-      puts("OBS! The selected item is not in stock.");
-      return;
-    }
   
   printf("Current stock of %s is %d\n", get_item_name(item), upper_bound);
-  int amount = ask_question_check_nr("Enter a quantity, or 0 to return to menu:", "OBS! You either entered a negative value, or a value greater than the current stock of the item.", &lower_bound, &upper_bound);
+  int amount = ask_question_check_nr("Enter a quantity, or 0 to return to menu:"
+                                     , "OBS! You either entered a negative value, or a value greater than the current stock of the item."
+                                     , &lower_bound, &upper_bound);
 
-  if (amount == 0)
-    {
-      puts("Operation cancelled by user.");
-      return;
-    }
+  if (operation_cancelled(amount)) return;
   
   while (true)
     {
       list_carts(storage);
       print_item(item, item_id, false);
       
-      int cart_id = ask_question_int("Enter the number id of the cart you would like to add above item to:");
+      int cart_id = ask_question_int("Enter the number id of the cart you would like to add above item to, or 0 to return to menu:");
+
+      if (operation_cancelled(cart_id)) return;
       
-      if (cart_exists(storage, cart_id))
+      if (cart_exists(*storage, cart_id))
         {
-          add_item_to_cart(storage, item, amount, cart_id);
+          add_item_to_cart(*storage, item, amount, cart_id);
           break;
         }
       else
         {
-          puts("OBS! Cart ID does not exist.");
+          puts("OBS! That cart ID does not exist.");
         }
     }
 }
@@ -565,8 +641,6 @@ void remove_from_cart(storage_t *storage)
   if (storage_null(storage)) return;
   if (storage_empty(storage)) return;
   if (no_carts_in_storage(storage)) return;
-
-  cart_t *cart;
   
   while (true)
     {
@@ -574,15 +648,11 @@ void remove_from_cart(storage_t *storage)
       
       int cart_id = ask_question_int("Enter the number id of a non-empty cart you would like to remove an item from, or 0 to return to menu:");
 
-      if (cart_id == 0)
-        {
-          puts("Operation cancelled by user.");
-          return;
-        }
+      if (operation_cancelled(cart_id)) return;
       
-      if (cart_exists(storage, cart_id))
+      if (cart_exists(*storage, cart_id))
         {
-          cart = extract_cart_from_storage(storage, cart_id);
+          cart_t *cart = extract_cart_from_storage(*storage, cart_id);
           if (get_cart_items_amount(*cart) == 0)
             {
               puts("OBS! This shopping cart is empty, please choose a non-empty one.");
@@ -590,7 +660,36 @@ void remove_from_cart(storage_t *storage)
             }
           else
             {
-              break;
+              puts("You have selected the following shopping cart:");
+              print_cart(*cart);
+              
+              int lower_bound = 1;
+              int upper_bound = get_cart_items_amount(*cart);
+              int item_id = ask_question_check_nr("Enter the number id of the item you would like to remove from the shopping cart, or 0 to return to menu:"
+                                                  , "OBS! An item with that ID does not exist in the selected shopping cart."
+                                                  , &lower_bound, &upper_bound);
+              
+              if (operation_cancelled(item_id)) return;
+              
+              lower_bound = 0;
+              upper_bound = get_cart_item_quantity(*get_cart_item_from_cart(*cart, item_id));
+              int amount = ask_question_check_nr("Enter a quantity, or 0 to return to menu:"
+                                                 , "OBS! You either entered a negative value, or a value greater than the current quantity in the shopping cart."
+                                                 , &lower_bound, &upper_bound);
+              
+              if (operation_cancelled(amount)) return;
+              
+              if (upper_bound - amount == 0)
+                {
+                  remove_item_from_cart(cart, item_id); 
+                }
+              else
+                {
+                  increase_cart_item_quantity(get_cart_item_from_cart(*cart, item_id), -amount);
+                }
+              
+              puts("Item successfully removed from shopping cart!");
+              return;
             }
         }
       else
@@ -598,38 +697,6 @@ void remove_from_cart(storage_t *storage)
           puts("OBS! Cart ID does not exist.");
         }
     }
-  
-  puts("You have selected the following shopping cart:");
-  print_cart(*cart);
-
-  int cart_items_amount = get_cart_items_amount(*cart);
-  
-  int lower_bound = 1;
-  int upper_bound = cart_items_amount;
-  int item_id = ask_question_check_nr("Enter the number id of the item you would like to remove from the shopping cart:", "OBS! An item with that ID does not exist in the selected shopping cart.", &lower_bound, &upper_bound);
-
-  cart_item_t *cart_item = get_cart_item_from_cart(*cart, item_id);
-  
-  lower_bound = 0;
-  upper_bound = get_cart_item_quantity(*cart_item);
-  int amount = ask_question_check_nr("Enter a quantity, or 0 to return to menu:", "OBS! You either entered a negative value, or a value greater than the current quantity in the shopping cart.", &lower_bound, &upper_bound);
-
-  if (amount == 0)
-    {
-      puts("Operation cancelled by user.");
-      return;
-    }
-
-  if (upper_bound - amount == 0)
-    {
-      remove_item_from_cart(cart, item_id); 
-    }
-  else
-    {
-      increase_cart_item_quantity(cart_item, -amount);
-    }
-  
-  puts("Item successfully removed from shopping cart!");
 }
 
 
@@ -639,8 +706,6 @@ void calculate_cart_cost(storage_t *storage)
   if (storage_null(storage)) return;
   if (storage_empty(storage)) return;
   if (no_carts_in_storage(storage)) return;
-
-  cart_t *cart;
   
   while (true)
     {
@@ -648,15 +713,11 @@ void calculate_cart_cost(storage_t *storage)
       
       int cart_id = ask_question_int("Enter the number id of a non-empty cart you would like to calculate the cost of, or 0 to return to menu:");
 
-      if (cart_id == 0)
-        {
-          puts("Operation cancelled by user.");
-          return;
-        }
+      if (operation_cancelled(cart_id)) return;      
       
-      if (cart_exists(storage, cart_id))
+      if (cart_exists(*storage, cart_id))
         {
-          cart = extract_cart_from_storage(storage, cart_id);
+          cart_t *cart = extract_cart_from_storage(*storage, cart_id);
           if (get_cart_items_amount(*cart) == 0)
             {
               puts("OBS! This shopping cart is empty, please choose a non-empty one.");
@@ -664,7 +725,10 @@ void calculate_cart_cost(storage_t *storage)
             }
           else
             {
-              break;
+              puts("Selected shopping cart:");
+              print_cart(*cart);
+              printf("Total cost is: %d kr\n", get_total_cost(*storage, *cart));
+              return;
             }
         }
       else
@@ -672,16 +736,6 @@ void calculate_cart_cost(storage_t *storage)
           puts("OBS! Cart ID does not exist.");
         }
     }
-
-  int total_cost = 0;
-  for (int i = 0; i < get_cart_items_amount(*cart); i++)
-    {
-      cart_item_t cart_item = *get_cart_item_from_cart(*cart, i);
-      item_t item = *extract_item_from_storage(*storage, get_cart_item_name(cart_item), NULL);
-      total_cost += get_cart_item_quantity(cart_item) * (get_item_price(item) / 100);
-    }
-  print_cart(*cart);
-  printf("Total cost of selected shopping cart is: %d kr\n", total_cost);
 }
 
 
@@ -692,24 +746,17 @@ void cart_checkout(storage_t *storage)
   if (storage_empty(storage)) return;
   if (no_carts_in_storage(storage)) return;  
   
-  cart_t *cart;
-  int cart_id = 0;
-  
   while (true)
     {
       list_carts(storage);
       
-      cart_id = ask_question_int("Enter the number id of a non-empty cart you would like to checkout, or 0 to return to menu:");
+      int cart_id = ask_question_int("Enter the number id of a non-empty cart you would like to checkout, or 0 to return to menu:");
       
-      if (cart_id == 0)
-        {
-          puts("Operation cancelled by user.");
-          return;
-        }
+      if (operation_cancelled(cart_id)) return;
       
-      if (cart_exists(storage, cart_id))
+      if (cart_exists(*storage, cart_id))
         {
-          cart = extract_cart_from_storage(storage, cart_id);
+          cart_t *cart = extract_cart_from_storage(*storage, cart_id);
           if (get_cart_items_amount(*cart) == 0)
             {
               puts("OBS! This shopping cart is empty, please choose a non-empty one.");
@@ -717,7 +764,10 @@ void cart_checkout(storage_t *storage)
             }
           else
             {
-              break;
+              printf("Shopping cart successfully checked out for a price of %d kr.\n"
+                     , get_total_cost(*storage, *cart));
+              checkout_cart_items(storage, cart);
+              return;
             }
         }
       else
@@ -725,15 +775,6 @@ void cart_checkout(storage_t *storage)
           puts("OBS! Cart ID does not exist.");
         }
     }
-
-  for (int i = 0; i < get_cart_items_amount(*cart); i++)
-    {
-      cart_item_t *cart_item = get_cart_item_from_cart(*cart, i);
-      deplete_stock(storage, cart_item);
-    }
-  remove_cart_from_storage(storage, cart_id);
-  
-  puts("Shopping cart successfully checked out!");
 }
 
 

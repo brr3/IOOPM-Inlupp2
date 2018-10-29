@@ -35,6 +35,26 @@ int get_storage_carts_amount(storage_t storage)
   return ioopm_linked_list_size(get_storage_carts(storage)); 
 }
 
+void set_storage_items(storage_t *storage, ioopm_hash_table_t *items)
+{
+  storage->items = items;
+}
+
+void set_storage_locations(storage_t *storage, ioopm_hash_table_t *locations)
+{
+  storage->locations = locations;
+}
+
+void set_storage_carts(storage_t *storage, ioopm_list_t *carts)
+{
+  storage->carts = carts;
+}
+
+void set_storage_cart_counter(storage_t *storage, int cart_counter)
+{
+  storage->cart_counter = cart_counter;
+}
+
 int increase_cart_counter(storage_t *storage)
 {
   return storage->cart_counter += 1;
@@ -168,6 +188,18 @@ cart_item_t *get_cart_item_from_cart(cart_t cart, int item_id)
   return ioopm_linked_list_get(cart_items, item_id - 1).v;
 }
 
+int get_total_cost(storage_t storage, cart_t cart)
+{
+  int total_cost = 0;
+  for (int i = 0; i < get_cart_items_amount(cart); i++)
+    {
+      cart_item_t cart_item = *get_cart_item_from_cart(cart, i);
+      item_t item = *extract_item_from_storage(storage, get_cart_item_name(cart_item), NULL);
+      total_cost += get_cart_item_quantity(cart_item) * (get_item_price(item) / 100);
+    }
+  return total_cost;
+}
+
 void set_cart_id(cart_t *cart, int id)
 {
   cart->id = id;
@@ -192,6 +224,7 @@ void increase_cart_item_quantity(cart_item_t *cart_item, int quantity)
 {
   cart_item->quantity += quantity;
 }
+
 
 
 

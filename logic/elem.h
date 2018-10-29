@@ -18,6 +18,14 @@ int get_storage_items_amount(storage_t storage);
 
 int get_storage_carts_amount(storage_t storage);
 
+void set_storage_items(storage_t *storage, ioopm_hash_table_t *items);
+
+void set_storage_locations(storage_t *storage, ioopm_hash_table_t *locations);
+
+void set_storage_carts(storage_t *storage, ioopm_list_t *carts);
+
+void set_storage_cart_counter(storage_t *storage, int cart_counter);
+
 int increase_cart_counter(storage_t *storage);
 
 //
@@ -73,6 +81,8 @@ int get_cart_item_quantity(cart_item_t cart_item);
 int get_cart_items_amount(cart_t cart);
 
 cart_item_t *get_cart_item_from_cart(cart_t cart, int item_id);
+
+int get_total_cost(storage_t storage, cart_t cart);
 
 void set_cart_id(cart_t *cart, int id);
 
