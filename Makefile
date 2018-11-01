@@ -29,5 +29,8 @@ memtest_loop: main
 clean:
 	rm *.o tests main
 
+doxygen:
+	doxygen Doxyfile
+
 gitadd:
-	git add logic/*.c logic/*.h user_interface/*.c user_interface/*.h *.c *.h *.md Makefile 
+	git add logic/*.c logic/*.h user_interface/*.c user_interface/*.h *.c *.h *.md Makefile Doxyfile

@@ -12,6 +12,7 @@ typedef struct shelf shelf_t;
 typedef struct cart cart_t;
 typedef struct cart_item cart_item_t;
 
+/// @brief Main storage containing everything needed for the program to run
 struct storage
 {
   ioopm_hash_table_t *items;
@@ -20,6 +21,7 @@ struct storage
   int cart_counter;
 };
 
+/// @brief Item stored in storage with a name, description, price and a list of shelves
 struct item
 {
   char *name;
@@ -28,18 +30,21 @@ struct item
   ioopm_list_t *shelves;
 };
 
+/// @brief Shelf for keeping track of stock, stored in shelves list in an item
 struct shelf
 {
   char *shelf_name;
   int stock;
 };
 
+/// @brief Shopping cart with a monotonically increasing id number and a list of items that are in the shopping cart
 struct cart
 {
   int id;
   ioopm_list_t *cart_items;
 };
 
+/// @brief Shopping cart item stored in a shopping cart with a quantity associated
 struct cart_item
 {
   char *name;
