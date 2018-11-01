@@ -54,36 +54,53 @@ void test_is_yn_key(){
   CU_ASSERT_FALSE(is_yn_key(key4));
 }
 
-void test_item_exists(){
-  /* char *name1 = "sak"; */
-  /* char *desc1 = "pryl"; */
-  /* int price1 = 1337; */
+void test_make_item(){
+  
+  storage_t *storage = make_storage();
+  item_t *item = make_item("name", "desc", 1337);
 
-  //storage_t *storage = make_storage();
-  item_t *item1 = make_item("sak", "pryl", 1337);
-  add_item_to_storage(storage, item1);
+  add_item_to_storage(storage, item);
 
-  CU_ASSERT_TRUE(item_exists(storage, "SAK"));
+  CU_ASSERT_TRUE(item_exists(*storage, "NAME"));
 
   destroy_storage(storage);
 }
 
-/* void test_make_item(){ */
-/* } */
-
-/* void test_make_shelf(){ */
-/* } */
-
-/* void test_find_shelf_in_item_shelves(){ */
-/* } */
-
-/* void test_add_item_to_storage(){ */
+/* void test_remake_item(){ */
+/*   //?????????????????????????????? */
 /* } */
 
 /* void test_remove_item_from_storage(){ */
+  
+/*   storage_t *storage = make_storage(); */
+/*   item_t *item = make_item("name", "desc", 1337); */
+/*   //add_item_to_storage(storage, item); */
+  
+/*   //remove_item_from_storage(storage, item); */
+
+/*   CU_ASSERT_FALSE(item_exists(*storage, "NAME")); */
+
+/*   destroy_storage(storage); */
 /* } */
 
-/* void test_ */
+/* void test_item_names_to_sorted_array(){ */
+
+/*   storage_t *storage = make_storage(); */
+/*   item_t *item1 = make_item("name1", "desc1", 1337); */
+/*   item_t *item2 = make_item("name2", "desc2", 1338); */
+/*   item_t *item3 = make_item("name3", "desc3", 1339); */
+/*   item_t *item4 = make_item("name4", "desc4", 1340); */
+/*   add_item_to_storage(storage, item1); */
+/*   add_item_to_storage(storage, item2); */
+/*   add_item_to_storage(storage, item3); */
+/*   add_item_to_storage(storage, item4); */
+
+/*   char *arr_names[4]; */
+/*   item_names_to_sorted_array(*storage, *arr_names[4]); */
+
+/*   destroy_storage(storage); */
+/* } */
+
 //---------------------------------------------------------
 
 int main(void)
@@ -104,7 +121,9 @@ int main(void)
       (NULL == CU_add_test(pSuiteNW, "test_is_shelf", test_is_shelf)) ||
       (NULL == CU_add_test(pSuiteNW, "test_is_menu_key", test_is_menu_key)) ||
       (NULL == CU_add_test(pSuiteNW, "test_is_yn_key", test_is_yn_key)) ||
-      (NULL == CU_add_test(pSuiteNW, "test_item_exists", test_item_exists))
+      (NULL == CU_add_test(pSuiteNW, "test_make_item", test_make_item)) /* || */
+      /* (NULL == CU_add_test(pSuiteNW, "test_remove_item_from_storage", test_remove_item_from_storage)) || */
+      /* (NULL == CU_add_test(pSuiteNW, "test_item_names_to_sorted_array", test_item_names_to_sorted_array)) */
      )
     {
       CU_cleanup_registry();
