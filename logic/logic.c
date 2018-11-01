@@ -226,7 +226,7 @@ item_t *make_item(char *name, char *desc, int price)
 
 static char *to_upper(char *str)
 {
-   int c = 0;  
+  int c = 0;  
    while (str[c] != '\0')
      {
        if (str[c] >= 'a' && str[c] <= 'z')
@@ -283,8 +283,6 @@ void remove_item_from_storage(storage_t *storage, item_t *item)
     } 
   elem_t elem_key_to_remove = {.s = get_item_name(*item)};
   ioopm_hash_table_remove_entry(get_storage_items(*storage), elem_key_to_remove);
-  elem_t elem_value_to_remove = {.v = item};
-  destroy_item((elem_t) {.v = NULL}, elem_value_to_remove, NULL);  
 }
 
 

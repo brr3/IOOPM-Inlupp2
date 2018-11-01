@@ -306,14 +306,14 @@ void edit_item(storage_t *storage)
               new_name = ask_question_string("Enter a different name: ");
             }
           remove_item_from_storage(storage, item);         
-          set_item_name(item, new_name);
+          set_item_name(item, new_name);          
           item_name_modified = true;
           anything_modified = true;
         }
       else if (answer == 2)
         {
           set_item_desc(item, ask_question_string("Enter a new description: "));
-          anything_modified = true;
+          anything_modified = true; 
         }
       else if (answer == 3)
         {
@@ -325,7 +325,7 @@ void edit_item(storage_t *storage)
           if (anything_modified)
             {
               if (item_name_modified)
-                {
+                {         
                   remake_item(storage, item);
                 }
               else

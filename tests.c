@@ -57,11 +57,12 @@ void test_is_yn_key(){
 void test_make_item(){
   
   storage_t *storage = make_storage();
-  item_t *item = make_item("name", "desc", 1337);
+  item_t *item = make_item(strdup("name"), strdup("desc"), 1337);
 
+  item_exists(*storage, get_item_name(*item));
   add_item_to_storage(storage, item);
 
-  CU_ASSERT_TRUE(item_exists(*storage, "NAME"));
+  CU_ASSERT_TRUE(item_exists(*storage, strdup("name")));
 
   destroy_storage(storage);
 }

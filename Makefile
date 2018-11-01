@@ -4,11 +4,9 @@ LINKOPTIONS = -lcunit
 
 main: elem.o logic.o ui.o dependencies.o main.c
 	$(COMPILER) $(OPTIONS) -o main elem.o logic.o ui.o hash_table.o linked_list.o utils.o main.c $(LINKOPTIONS)
-	./main
 
-tests: elem.o logic.o ui.o tests.c
+tests: elem.o logic.o ui.o dependencies.o tests.c
 	$(COMPILER) $(OPTIONS) -o tests elem.o logic.o ui.o hash_table.o linked_list.o utils.o tests.c $(LINKOPTIONS)
-	./tests
 
 elem.o: logic/elem.c logic/elem.h
 	$(COMPILER) $(OPTIONS) -c logic/elem.c $(LINKOPTIONS)
