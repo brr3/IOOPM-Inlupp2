@@ -44,7 +44,7 @@ struct cart
   ioopm_list_t *cart_items;
 };
 
-/// @brief Shopping cart item stored in a shopping cart with a quantity associated
+/// @brief Shopping cart item stored in a shopping cart with a quantity associated, must be in sync with items data structure
 struct cart_item
 {
   char *name;
@@ -116,7 +116,7 @@ bool item_exists(storage_t storage, char *item_name);
 ///                | ...the address of the full information for that item, one that maps names
 ///                | ...of storage locations to the name of the item stored at that location,
 ///                | ...and a linked list of shopping carts
-/// @param item    | The item to transfer details from 
+/// @param item    | The item to transfer details from
 void remake_item(storage_t *storage, item_t *item);
 
 /// @brief Add item to storage
@@ -210,7 +210,7 @@ bool cart_exists(storage_t storage, int cart_id);
 ///                | ...and a linked list of shopping carts
 void add_cart_to_storage(storage_t *storage);
 
-/// @brief Remove a shopping cart from storage         
+/// @brief Remove a shopping cart from storage
 /// @param storage | A storage containing two hash tables, one that maps names of items to
 ///                | ...the address of the full information for that item, one that maps names
 ///                | ...of storage locations to the name of the item stored at that location,
@@ -223,7 +223,7 @@ void remove_cart_from_storage(storage_t *storage, int cart_id);
 ///                | ...the address of the full information for that item, one that maps names
 ///                | ...of storage locations to the name of the item stored at that location,
 ///                | ...and a linked list of shopping carts
-/// @param cart_id | The identification number of the shopping cart to retrieve 
+/// @param cart_id | The identification number of the shopping cart to retrieve
 cart_t *extract_cart_from_storage(storage_t storage, int cart_id);
 
 /// @brief Add an item to a shopping cart
