@@ -59,7 +59,6 @@ void test_make_item(){
   storage_t *storage = make_storage();
   item_t *item = make_item(strdup("name"), strdup("desc"), 1337);
 
-  item_exists(*storage, get_item_name(*item));
   add_item_to_storage(storage, item);
 
   CU_ASSERT_TRUE(item_exists(*storage, strdup("name")));
@@ -67,40 +66,132 @@ void test_make_item(){
   destroy_storage(storage);
 }
 
-/* void test_remake_item(){ */
-/*   //?????????????????????????????? */
-/* } */
-
-/* void test_remove_item_from_storage(){ */
+void test_remove_item_from_storage(){
   
-/*   storage_t *storage = make_storage(); */
-/*   item_t *item = make_item("name", "desc", 1337); */
-/*   //add_item_to_storage(storage, item); */
+  storage_t *storage = make_storage();
+  item_t *item = make_item(strdup("name"), strdup("desc"), 1337);
+  add_item_to_storage(storage, item);
   
-/*   //remove_item_from_storage(storage, item); */
+  remove_item_from_storage(storage, item);
 
-/*   CU_ASSERT_FALSE(item_exists(*storage, "NAME")); */
+  CU_ASSERT_FALSE(item_exists(*storage, strdup("name")));
 
-/*   destroy_storage(storage); */
-/* } */
+  destroy_storage(storage);
+}
 
-/* void test_item_names_to_sorted_array(){ */
+void test_item_names_to_sorted_array(){
 
-/*   storage_t *storage = make_storage(); */
-/*   item_t *item1 = make_item("name1", "desc1", 1337); */
-/*   item_t *item2 = make_item("name2", "desc2", 1338); */
-/*   item_t *item3 = make_item("name3", "desc3", 1339); */
-/*   item_t *item4 = make_item("name4", "desc4", 1340); */
-/*   add_item_to_storage(storage, item1); */
-/*   add_item_to_storage(storage, item2); */
-/*   add_item_to_storage(storage, item3); */
-/*   add_item_to_storage(storage, item4); */
+  storage_t *storage = make_storage();
+  item_t *item1 = make_item(strdup("name1"), strdup("desc1"), 1337);
+  item_t *item2 = make_item(strdup("name2"), strdup("desc2"), 1338);
+  item_t *item3 = make_item(strdup("name3"), strdup("desc3"), 1339);
+  item_t *item4 = make_item(strdup("name4"), strdup("desc4"), 1340);
+  add_item_to_storage(storage, item1);
+  add_item_to_storage(storage, item2);
+  add_item_to_storage(storage, item3);
+  add_item_to_storage(storage, item4);
 
-/*   char *arr_names[4]; */
-/*   item_names_to_sorted_array(*storage, *arr_names[4]); */
+  char *arr[4];
+  item_names_to_sorted_array(*storage, arr);
 
-/*   destroy_storage(storage); */
-/* } */
+  CU_ASSERT_TRUE(0 == strcmp(arr[0], "NAME1"));
+
+  destroy_storage(storage);
+}
+
+void test_extract_item_from_storage(){
+  
+  storage_t *storage = make_storage();
+  item_t *item1 = make_item(strdup("name1"), strdup("desc1"), 1337);
+  item_t *item2 = make_item(strdup("name2"), strdup("desc2"), 1338);
+  item_t *item3 = make_item(strdup("name3"), strdup("desc3"), 1339);
+  item_t *item4 = make_item(strdup("name4"), strdup("desc4"), 1340);
+  add_item_to_storage(storage, item1);
+  add_item_to_storage(storage, item2);
+  add_item_to_storage(storage, item3);
+  add_item_to_storage(storage, item4);
+
+  //item_t extracted_item = *extract_item_from_storage(*storage, strdup("name1"), NULL);
+  //printf("%s", extracted_item.name);
+
+  destroy_storage(storage);
+}
+
+void test_location_exists(){
+
+  storage_t *storage = make_storage();
+  item_t *item1 = make_item(strdup("name1"), strdup("desc1"), 1337);
+  item_t *item2 = make_item(strdup("name2"), strdup("desc2"), 1338);
+  item_t *item3 = make_item(strdup("name3"), strdup("desc3"), 1339);
+  item_t *item4 = make_item(strdup("name4"), strdup("desc4"), 1340);
+  add_item_to_storage(storage, item1);
+  add_item_to_storage(storage, item2);
+  add_item_to_storage(storage, item3);
+  add_item_to_storage(storage, item4);
+
+  add_shelf_to_storage(storage, item1, strdup("A01"), 10);
+  add_shelf_to_storage(storage, item2, strdup("A02"), 9);
+  add_shelf_to_storage(storage, item3, strdup("A03"), 11);
+  add_shelf_to_storage(storage, item4, strdup("A04"), 12);
+
+  CU_ASSERT_TRUE(location_exists(*storage, strdup("A01"), NULL));
+  CU_ASSERT_TRUE(location_exists(*storage, strdup("A02"), NULL));
+  CU_ASSERT_FALSE(location_exists(*storage, strdup("A05"), NULL));
+  CU_ASSERT_FALSE(location_exists(*storage, strdup(""), NULL));
+  
+  destroy_storage(storage);
+}
+
+void test_find_shelf_in_item(){
+  
+  storage_t *storage = make_storage();
+  item_t *item1 = make_item(strdup("name1"), strdup("desc1"), 1337);
+  item_t *item2 = make_item(strdup("name2"), strdup("desc2"), 1338);
+  item_t *item3 = make_item(strdup("name3"), strdup("desc3"), 1339);
+  item_t *item4 = make_item(strdup("name4"), strdup("desc4"), 1340);
+  add_item_to_storage(storage, item1);
+  add_item_to_storage(storage, item2);
+  add_item_to_storage(storage, item3);
+  add_item_to_storage(storage, item4);
+
+  add_shelf_to_storage(storage, item1, strdup("A01"), 10);
+  add_shelf_to_storage(storage, item2, strdup("A02"), 9);
+  add_shelf_to_storage(storage, item3, strdup("A03"), 11);
+  add_shelf_to_storage(storage, item4, strdup("A04"), 12);
+
+  shelf_t *found_shelf = find_shelf_in_item(item1, "A01");
+
+  CU_ASSERT_TRUE(0 == strcmp(strdup(found_shelf->shelf_name), strdup("A01")));
+  
+  destroy_storage(storage);
+}
+
+void test_checkout_cart_item(){
+  
+  storage_t *storage = make_storage();
+  item_t *item1 = make_item(strdup("name1"), strdup("desc1"), 1337);
+  item_t *item2 = make_item(strdup("name2"), strdup("desc2"), 1338);
+  item_t *item3 = make_item(strdup("name3"), strdup("desc3"), 1339);
+  item_t *item4 = make_item(strdup("name4"), strdup("desc4"), 1340);
+  add_item_to_storage(storage, item1);
+  add_item_to_storage(storage, item2);
+  add_item_to_storage(storage, item3);
+  add_item_to_storage(storage, item4);
+
+  add_shelf_to_storage(storage, item1, strdup("A01"), 10);
+  add_shelf_to_storage(storage, item2, strdup("A02"), 9);
+  add_shelf_to_storage(storage, item3, strdup("A03"), 11);
+  add_shelf_to_storage(storage, item4, strdup("A04"), 12);
+
+  add_cart_to_storage(storage);
+  add_item_to_cart(*storage, *item1, 3, 1);
+  add_item_to_cart(*storage, *item2, 1, 1);
+  cart_t *cart = extract_cart_from_storage(*storage, 1);
+
+  checkout_cart_items(storage, cart);
+  
+  destroy_storage(storage);
+}
 
 //---------------------------------------------------------
 
@@ -122,9 +213,13 @@ int main(void)
       (NULL == CU_add_test(pSuiteNW, "test_is_shelf", test_is_shelf)) ||
       (NULL == CU_add_test(pSuiteNW, "test_is_menu_key", test_is_menu_key)) ||
       (NULL == CU_add_test(pSuiteNW, "test_is_yn_key", test_is_yn_key)) ||
-      (NULL == CU_add_test(pSuiteNW, "test_make_item", test_make_item)) /* || */
-      /* (NULL == CU_add_test(pSuiteNW, "test_remove_item_from_storage", test_remove_item_from_storage)) || */
-      /* (NULL == CU_add_test(pSuiteNW, "test_item_names_to_sorted_array", test_item_names_to_sorted_array)) */
+      (NULL == CU_add_test(pSuiteNW, "test_make_item", test_make_item)) ||
+      (NULL == CU_add_test(pSuiteNW, "test_remove_item_from_storage", test_remove_item_from_storage)) ||
+      (NULL == CU_add_test(pSuiteNW, "test_item_names_to_sorted_array", test_item_names_to_sorted_array)) ||
+      (NULL == CU_add_test(pSuiteNW, "test_location_exists", test_location_exists)) ||
+      (NULL == CU_add_test(pSuiteNW, "test_find_shelf_in_item", test_find_shelf_in_item)) ||
+      (NULL == CU_add_test(pSuiteNW, "test_checkout_cart_item", test_checkout_cart_item)) ||
+      (NULL == CU_add_test(pSuiteNW, "test_extract_item_from_storage", test_extract_item_from_storage))
      )
     {
       CU_cleanup_registry();
