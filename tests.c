@@ -99,6 +99,7 @@ void test_item_names_to_sorted_array(){
   destroy_storage(storage);
 }
 
+//fuck this one?? Segfaultar med de utkomenterade delarna....
 void test_extract_item_from_storage(){
   
   storage_t *storage = make_storage();
@@ -111,9 +112,10 @@ void test_extract_item_from_storage(){
   add_item_to_storage(storage, item3);
   add_item_to_storage(storage, item4);
 
-  //item_t extracted_item = *extract_item_from_storage(*storage, strdup("name1"), NULL);
-  //printf("%s", extracted_item.name);
+  /* item_t extracted_item = *extract_item_from_storage(*storage, strdup("name1"), NULL); */
 
+  /* CU_ASSERT_TRUE(1 == strcmp(strdup("name1"), extracted_item.name)); */
+  
   destroy_storage(storage);
 }
 
@@ -193,6 +195,60 @@ void test_checkout_cart_item(){
   destroy_storage(storage);
 }
 
+void test_cart_exists(){
+
+  storage_t *storage = make_storage();
+  add_cart_to_storage(storage);
+
+  CU_ASSERT_TRUE(cart_exists(*storage, 1));
+  CU_ASSERT_FALSE(cart_exists(*storage, 2));
+
+  destroy_storage(storage);
+}
+
+void test_remove_cart_from_storage(){
+  
+  storage_t *storage = make_storage();
+  add_cart_to_storage(storage);
+
+  CU_ASSERT_TRUE(cart_exists(*storage, 1));
+
+  remove_cart_from_storage(storage, 1);
+
+  CU_ASSERT_FALSE(cart_exists(*storage, 1));
+
+  destroy_storage(storage);
+}
+
+void test_remove_item_from_cart(){
+
+  storage_t *storage = make_storage();
+  item_t *item1 = make_item(strdup("name1"), strdup("desc1"), 1337);
+  item_t *item2 = make_item(strdup("name2"), strdup("desc2"), 1338);
+  item_t *item3 = make_item(strdup("name3"), strdup("desc3"), 1339);
+  item_t *item4 = make_item(strdup("name4"), strdup("desc4"), 1340);
+  add_item_to_storage(storage, item1);
+  add_item_to_storage(storage, item2);
+  add_item_to_storage(storage, item3);
+  add_item_to_storage(storage, item4);
+
+  add_shelf_to_storage(storage, item1, strdup("A01"), 10);
+  add_shelf_to_storage(storage, item2, strdup("A02"), 9);
+  add_shelf_to_storage(storage, item3, strdup("A03"), 11);
+  add_shelf_to_storage(storage, item4, strdup("A04"), 12);
+
+  add_cart_to_storage(storage);
+  add_item_to_cart(*storage, *item1, 3, 1);
+  add_item_to_cart(*storage, *item2, 1, 1);
+
+  cart_t *cart = extract_cart_from_storage(*storage, 1);
+
+  remove_item_from_cart(cart, 1);
+  remove_item_from_cart(cart, 2);
+
+  destroy_storage(storage);
+}
+
 //---------------------------------------------------------
 
 int main(void)
@@ -219,7 +275,10 @@ int main(void)
       (NULL == CU_add_test(pSuiteNW, "test_location_exists", test_location_exists)) ||
       (NULL == CU_add_test(pSuiteNW, "test_find_shelf_in_item", test_find_shelf_in_item)) ||
       (NULL == CU_add_test(pSuiteNW, "test_checkout_cart_item", test_checkout_cart_item)) ||
-      (NULL == CU_add_test(pSuiteNW, "test_extract_item_from_storage", test_extract_item_from_storage))
+      (NULL == CU_add_test(pSuiteNW, "test_extract_item_from_storage", test_extract_item_from_storage)) ||
+      (NULL == CU_add_test(pSuiteNW, "test_cart_exists", test_cart_exists)) ||
+      (NULL == CU_add_test(pSuiteNW, "test_remove_cart_from_storage", test_remove_cart_from_storage)) ||
+      (NULL == CU_add_test(pSuiteNW, "test_remove_item_from_cart", test_remove_item_from_cart))
      )
     {
       CU_cleanup_registry();
