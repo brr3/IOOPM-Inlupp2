@@ -159,6 +159,8 @@ void add_item(storage_t *storage)
 
 
 
+/// brief Check if a storage contains any items
+/// returns | True if storage is empty, else false
 static bool storage_empty(storage_t *storage)
 {
   if (get_storage_items_amount(*storage) == 0)
