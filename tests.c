@@ -112,10 +112,11 @@ void test_extract_item_from_storage(){
   add_item_to_storage(storage, item4);
 
   char *tmp = strdup("name1");
-  elem_t found_value; 
+  elem_t found_value = {.v = item1};
   item_t *extracted_item = extract_item_from_storage(*storage, tmp, &found_value);
 
-  CU_ASSERT_TRUE(1 == strcmp(strdup("name1"), extracted_item->name));
+  puts(extracted_item->name);
+  CU_ASSERT_TRUE(0 == strcmp(strdup("NAME1"), extracted_item->name));
   
   destroy_storage(storage);
 }

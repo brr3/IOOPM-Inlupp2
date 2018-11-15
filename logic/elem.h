@@ -161,7 +161,7 @@ cart_item_t *get_cart_item_from_cart(cart_t cart, int item_id);
 /// @brief Retrieve the total cost of all items in a shopping cart
 /// @param storage   | See comments in ui.h
 /// @param cart_item | The shopping cart item
-int get_total_cost(storage_t storage, cart_t cart);
+double get_total_cost(storage_t storage, cart_t cart);
 
 /// @brief Set the id number for a cart
 /// @param cart | The shopping cart

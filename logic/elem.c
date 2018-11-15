@@ -188,9 +188,9 @@ cart_item_t *get_cart_item_from_cart(cart_t cart, int item_id)
   return ioopm_linked_list_get(cart_items, item_id - 1).v;
 }
 
-int get_total_cost(storage_t storage, cart_t cart)
+double get_total_cost(storage_t storage, cart_t cart)
 {
-  int total_cost = 0;
+  double total_cost = 0;
   for (int i = 0; i < get_cart_items_amount(cart); i++)
     {
       cart_item_t cart_item = *get_cart_item_from_cart(cart, i);
