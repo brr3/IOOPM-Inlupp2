@@ -99,7 +99,6 @@ void test_item_names_to_sorted_array(){
   destroy_storage(storage);
 }
 
-//fuck this one?? Segfaultar med de utkomenterade delarna....
 void test_extract_item_from_storage(){
   
   storage_t *storage = make_storage();
@@ -112,9 +111,11 @@ void test_extract_item_from_storage(){
   add_item_to_storage(storage, item3);
   add_item_to_storage(storage, item4);
 
-  /* item_t extracted_item = *extract_item_from_storage(*storage, strdup("name1"), NULL); */
+  char *tmp = strdup("name1");
+  elem_t found_value; 
+  item_t *extracted_item = extract_item_from_storage(*storage, tmp, &found_value);
 
-  /* CU_ASSERT_TRUE(1 == strcmp(strdup("name1"), extracted_item.name)); */
+  CU_ASSERT_TRUE(1 == strcmp(strdup("name1"), extracted_item->name));
   
   destroy_storage(storage);
 }

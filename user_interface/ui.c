@@ -235,6 +235,12 @@ void remove_item(storage_t *storage)
   elem_t elem_value_to_remove;
   item_t *item = extract_item_from_storage(*storage, arr_names[id - 1], &elem_value_to_remove);
   
+  if (cart_item_exists_in_any_cart(storage->carts, item->name))
+    {
+      puts("Cannot remove an item from the database while it exists in a shopping cart!");
+      return;
+    }
+  
   puts("You have selected the following merchandise:");
   print_item(*item, id, true);
 
@@ -243,11 +249,11 @@ void remove_item(storage_t *storage)
       char *key = ask_question_yes_no(("Are you sure you want to remove the selected merchandise on all its storage locations? (y/n)"));
       char key_up = toupper(*key);
       if (key_up == 'Y')
-        {
+        {               
           remove_item_from_storage(storage, item);
           free(key);
           puts("Merchandise successfully removed!");
-          return;
+          return;          
         }
       if (key_up == 'N')
         {
@@ -283,6 +289,12 @@ void edit_item(storage_t *storage)
   item_t *item = extract_item_from_storage(*storage, arr_names[id - 1], &ignored_value);
   bool item_name_modified = false;
   bool anything_modified = false;
+
+  if (cart_item_exists_in_any_cart(storage->carts, item->name))
+    {
+      puts("Cannot edit an item while it exists in a shopping cart!");
+      return;
+    }
 
   while (true)
     {    

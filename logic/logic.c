@@ -603,6 +603,18 @@ static bool cart_item_exists(cart_t cart, char *item_name)
   return false;
 }
 
+bool cart_item_exists_in_any_cart(ioopm_list_t *carts, char *item_name)
+{
+  for (int i = 0; i < (int) ioopm_linked_list_size(carts); i++)
+    {
+      if (cart_item_exists(*(cart_t*) ioopm_linked_list_get(carts, i).v, item_name))
+        {
+          return true;
+        }
+    }
+  return false;
+}
+
 void add_item_to_cart(storage_t storage, item_t item, int amount, int cart_id)
 {
   cart_t *cart = extract_cart_from_storage(storage, cart_id);

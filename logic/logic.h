@@ -210,6 +210,12 @@ bool cart_exists(storage_t storage, int cart_id);
 ///                | ...and a linked list of shopping carts
 void add_cart_to_storage(storage_t *storage);
 
+/// @brief Check if an item exists in any shopping cart
+/// @param carts     | The list of all shopping carts in storage
+/// @param item_name | The name of the item to check for
+/// @return          | True if the item exists in any shopping cart, else false
+bool cart_item_exists_in_any_cart(ioopm_list_t *carts, char *item_name);
+
 /// @brief Remove a shopping cart from storage
 /// @param storage | A storage containing two hash tables, one that maps names of items to
 ///                | ...the address of the full information for that item, one that maps names
